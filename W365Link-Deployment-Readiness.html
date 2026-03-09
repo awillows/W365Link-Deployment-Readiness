@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows 365 Link - Deployment Readiness Guide</title>
+    <style>
+        :root {
+            --brand-primary: #0078d4;
+            --brand-primary-dark: #005a9e;
+            --brand-primary-light: #deecf9;
+            --text-primary: #1b1b1b;
+            --text-secondary: #505050;
+            --text-muted: #707070;
+            --bg-body: #f5f5f5;
+            --bg-card: #ffffff;
+            --border-color: #e1e1e1;
+            --success: #107c10;
+            --success-bg: #dff6dd;
+            --warning: #797600;
+            --warning-bg: #fff4ce;
+            --error: #d13438;
+            --error-bg: #fde7e9;
+            --info: #0078d4;
+            --info-bg: #deecf9;
+            --sidebar-width: 280px;
+            --header-height: 48px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-body);
+        }
+
+        /* === HEADER === */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: #1b1b1b;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            z-index: 1000;
+            gap: 8px;
+        }
+        .site-header .ms-logo {
+            width: 20px;
+            height: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+        }
+        .site-header .ms-logo span {
+            background: #fff;
+            display: block;
+        }
+        .site-header .site-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 4px;
+            opacity: 0.9;
+        }
+        .site-header .site-title a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .site-header .breadcrumb {
+            margin-left: 8px;
+            font-size: 13px;
+            color: #a0a0a0;
+        }
+        .site-header .breadcrumb a {
+            color: #a0a0a0;
+            text-decoration: none;
+        }
+        .site-header .breadcrumb a:hover {
+            color: #fff;
+        }
+
+        /* === PROGRESS BAR === */
+        .progress-strip {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #e0e0e0;
+            z-index: 999;
+        }
+        .progress-strip-fill {
+            height: 100%;
+            background: var(--brand-primary);
+            transition: width 0.4s ease;
+            width: 0%;
+        }
+
+        /* === LAYOUT === */
+        .layout {
+            display: flex;
+            margin-top: calc(var(--header-height) + 4px);
+            min-height: calc(100vh - var(--header-height) - 4px);
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            position: fixed;
+            top: calc(var(--header-height) + 4px);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height) - 4px);
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 16px 0;
+            z-index: 100;
+        }
+        .sidebar-section-label {
+            padding: 8px 24px 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            padding: 6px 24px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            gap: 8px;
+            transition: all 0.15s;
+        }
+        .sidebar-nav a:hover {
+            background: #f0f0f0;
+            color: var(--text-primary);
+        }
+        .sidebar-nav a.active {
+            border-left-color: var(--brand-primary);
+            color: var(--brand-primary);
+            background: var(--brand-primary-light);
+            font-weight: 600;
+        }
+        .sidebar-nav a .step-status {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid #c0c0c0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .sidebar-nav a .step-status.complete {
+            border-color: var(--success);
+            background: var(--success);
+            color: #fff;
+        }
+        .sidebar-nav a .step-status.in-progress {
+            border-color: var(--brand-primary);
+        }
+        .sidebar-nav a .step-status.has-warning {
+            border-color: var(--warning);
+            background: var(--warning-bg);
+        }
+
+        /* Readiness Score */
+        .readiness-score-container {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 8px;
+        }
+        .readiness-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .readiness-ring {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 8px;
+            position: relative;
+        }
+        .readiness-ring svg {
+            transform: rotate(-90deg);
+        }
+        .readiness-ring .ring-bg {
+            fill: none;
+            stroke: #e0e0e0;
+            stroke-width: 6;
+        }
+        .readiness-ring .ring-fill {
+            fill: none;
+            stroke: var(--brand-primary);
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 226;
+            stroke-dashoffset: 226;
+            transition: stroke-dashoffset 0.6s ease, stroke 0.3s;
+        }
+        .readiness-ring .ring-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .readiness-summary {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* === MAIN CONTENT === */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px 48px 64px;
+            max-width: 900px;
+        }
+
+        /* Sections */
+        .doc-section {
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+        .doc-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 28px 0 12px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 20px 0 8px;
+        }
+        .section-description {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.7;
+        }
+
+        /* Callout boxes */
+        .callout {
+            padding: 12px 16px;
+            border-left: 4px solid;
+            border-radius: 4px;
+            margin: 16px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .callout-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .callout.info { border-color: var(--info); background: var(--info-bg); }
+        .callout.warning { border-color: #e87400; background: var(--warning-bg); }
+        .callout.error { border-color: var(--error); background: var(--error-bg); }
+        .callout.success { border-color: var(--success); background: var(--success-bg); }
+        .callout.support-risk {
+            border-color: #8b5cf6;
+            background: #f3f0ff;
+        }
+        .callout.support-risk .callout-title {
+            color: #6d28d9;
+        }
+
+        /* Checklist */
+        .checklist {
+            list-style: none;
+            margin: 16px 0;
+        }
+        .checklist li {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: var(--bg-card);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .checklist li:hover {
+            border-color: var(--brand-primary);
+            box-shadow: 0 1px 4px rgba(0,120,212,0.1);
+        }
+        .checklist li.checked {
+            border-color: var(--success);
+            background: var(--success-bg);
+        }
+        .checklist li input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--success);
+            cursor: pointer;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        .checklist li .check-content {
+            flex: 1;
+        }
+        .checklist li .check-label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .checklist li .check-detail {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Expandable details */
+        .expand-section {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin: 12px 0;
+            background: var(--bg-card);
+            overflow: hidden;
+        }
+        .expand-header {
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+            transition: background 0.15s;
+        }
+        .expand-header:hover { background: #f8f8f8; }
+        .expand-header .chevron {
+            transition: transform 0.2s;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .expand-header.open .chevron { transform: rotate(90deg); }
+        .expand-body {
+            display: none;
+            padding: 0 16px 16px;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+        .expand-body.open { display: block; }
+
+        /* Steps */
+        .step-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            background: var(--bg-card);
+        }
+        .step-card .step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--brand-primary);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+        .step-card p {
+            margin: 8px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .step-card code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+        }
+        .step-card .portal-path {
+            background: #f6f6f6;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            margin: 8px 0;
+            color: var(--text-secondary);
+        }
+
+        /* Navigation buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+        .btn {
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: var(--brand-primary);
+        }
+        .btn-primary:hover { background: var(--brand-primary-dark); }
+        .btn-outline {
+            background: transparent;
+            color: var(--brand-primary);
+            border-color: var(--brand-primary);
+        }
+        .btn-outline:hover { background: var(--brand-primary-light); }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+        }
+        th {
+            background: #f6f6f6;
+            font-weight: 600;
+        }
+
+        /* Tag/badge */
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .tag-required { background: var(--error-bg); color: var(--error); }
+        .tag-recommended { background: var(--warning-bg); color: var(--warning); }
+        .tag-optional { background: #f0f0f0; color: var(--text-muted); }
+        .tag-risk { background: #f3f0ff; color: #6d28d9; }
+
+        /* Links */
+        a { color: var(--brand-primary); }
+        a:hover { text-decoration: underline; }
+
+        /* Scrollbar */
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #c0c0c0; border-radius: 3px; }
+
+        /* Hero banner for overview*/
+        .hero-banner {
+            background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+            color: #fff;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .hero-banner h1 { color: #fff; margin-bottom: 12px; }
+        .hero-banner p { font-size: 15px; opacity: 0.9; max-width: 640px; line-height: 1.7; }
+        .hero-stats {
+            display: flex;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        .hero-stat {
+            text-align: center;
+        }
+        .hero-stat .stat-num {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .hero-stat .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+        }
+
+        /* Decision tree */
+        .decision-node {
+            border: 2px solid var(--brand-primary);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            background: var(--bg-card);
+        }
+        .decision-question {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .decision-options {
+            display: flex;
+            gap: 12px;
+        }
+        .decision-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            background: var(--bg-card);
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .decision-btn:hover { border-color: var(--brand-primary); background: var(--brand-primary-light); }
+        .decision-btn.selected { border-color: var(--brand-primary); background: var(--brand-primary); color: #fff; }
+        .decision-result {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 6px;
+            display: none;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .decision-result.visible { display: block; }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+    <div class="ms-logo"><span></span><span></span><span></span><span></span></div>
+    <span class="site-title"><a href="#">Microsoft Learn</a></span>
+    <span class="breadcrumb">
+        <a href="#">Windows 365</a> &rsaquo; <a href="#">Link</a> &rsaquo; Deployment Readiness
+    </span>
+</header>
+
+<!-- PROGRESS BAR -->
+<div class="progress-strip">
+    <div class="progress-strip-fill" id="progressBar"></div>
+</div>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+    <div class="readiness-score-container">
+        <div class="readiness-label">Deployment Readiness</div>
+        <div class="readiness-ring">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle class="ring-bg" cx="40" cy="40" r="36"/>
+                <circle class="ring-fill" id="scoreRing" cx="40" cy="40" r="36"/>
+            </svg>
+            <div class="ring-text" id="scoreText">0%</div>
+        </div>
+        <div class="readiness-summary" id="scoreSummary">Complete each section to improve readiness</div>
+    </div>
+
+    <div class="sidebar-section-label">Getting Started</div>
+    <div class="sidebar-nav" id="sidebarNav">
+        <a href="#" data-section="overview" class="active">
+            <span class="step-status" id="status-overview">&#8288;</span> Overview
+        </a>
+    </div>
+
+    <div class="sidebar-section-label">Environment Preparation</div>
+    <div class="sidebar-nav">
+        <a href="#" data-section="licensing">
+            <span class="step-status" id="status-licensing">&#8288;</span> 1. Licensing
+        </a>
+        <a href="#" data-section="entra-join">
+            <span class="step-status" id="status-entra-join">&#8288;</span> 2. Entra ID Join
+        </a>
+        <a href="#" data-section="intune-enrollment">
+            <span class="step-status" id="status-intune-enrollment">&#8288;</span> 3. Intune Enrollment
+        </a>
+        <a href="#" data-section="enrollment-restrictions">
+            <span class="step-status" id="status-enrollment-restrictions">&#8288;</span> 4. Enrollment Restrictions
+        </a>
+        <a href="#" data-section="sso">
+            <span class="step-status" id="status-sso">&#8288;</span> 5. SSO Configuration
+        </a>
+        <a href="#" data-section="conditional-access">
+            <span class="step-status" id="status-conditional-access">&#8288;</span> 6. Conditional Access
+        </a>
+    </div>
+
+    <div class="sidebar-section-label">Recommended Config</div>
+    <div class="sidebar-nav">
+        <a href="#" data-section="authentication">
+            <span class="step-status" id="status-authentication">&#8288;</span> 7. Authentication
+        </a>
+        <a href="#" data-section="teams">
+            <span class="step-status" id="status-teams">&#8288;</span> 8. Teams &amp; Media
+        </a>
+        <a href="#" data-section="network">
+            <span class="step-status" id="status-network">&#8288;</span> 9. Network
+        </a>
+    </div>
+
+    <div class="sidebar-section-label">Deploy</div>
+    <div class="sidebar-nav">
+        <a href="#" data-section="onboarding">
+            <span class="step-status" id="status-onboarding">&#8288;</span> 10. Onboarding
+        </a>
+        <a href="#" data-section="validation">
+            <span class="step-status" id="status-validation">&#8288;</span> 11. Validation
+        </a>
+    </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main-content">
+
+<!-- ==================== OVERVIEW ==================== -->
+<section class="doc-section active" id="section-overview">
+    <div class="hero-banner">
+        <h1>Windows 365 Link — Deployment Readiness Guide</h1>
+        <p>This interactive guide walks administrators through every prerequisite and configuration step needed to successfully deploy Windows 365 Link devices. Each section includes validation checklists and highlights common pitfalls that generate support cases.</p>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="stat-num">11</div>
+                <div class="stat-label">Sections</div>
+            </div>
+            <div class="hero-stat">
+                <div class="stat-num" id="totalChecks">0</div>
+                <div class="stat-label">Checkpoints</div>
+            </div>
+            <div class="hero-stat">
+                <div class="stat-num">10</div>
+                <div class="stat-label">Risk Alerts</div>
+            </div>
+        </div>
+    </div>
+
+    <h2>Why this guide?</h2>
+    <p class="section-description">
+        Windows 365 Link is a purpose-built Cloud PC device that requires specific environment configurations across <strong>Microsoft Entra&nbsp;ID</strong>, <strong>Microsoft Intune</strong>, and <strong>Windows 365</strong>. When any of these prerequisites are not met, the device either fails to enroll or fails to connect to the user's Cloud PC — generating a support case.
+    </p>
+
+    <div class="callout support-risk">
+        <div class="callout-title">&#x1F4CA; Top Support Case Drivers</div>
+        Based on documentation analysis, these are the areas most likely to generate support cases for new deployments:
+        <ol style="margin-top:8px; padding-left:20px;">
+            <li><strong>SSO not enabled on Cloud PCs</strong> — Device connects but Cloud PC rejects with non-obvious error</li>
+            <li><strong>SSO consent prompt not suppressed</strong> — Connection fails every 30 days; requires workaround on another device</li>
+            <li><strong>Conditional Access policy mismatch</strong> — Two-stage auth model causes "interactive window can't be shown" error</li>
+            <li><strong>Enrollment restrictions blocking Link devices</strong> — Link initially enrolls as "Unknown/Personal", hitting block policies</li>
+            <li><strong>MDM User Scope not configured</strong> — Device joins Entra ID but silently never appears in Intune</li>
+        </ol>
+    </div>
+
+    <h2>How to use this guide</h2>
+    <p class="section-description">
+       Work through each section in order using the sidebar navigation. Check off each item as you confirm or complete it in your environment. The <strong>Deployment Readiness</strong> score in the sidebar tracks your overall progress. Sections marked with <span class="tag tag-required">Required</span> must be completed. Sections marked <span class="tag tag-recommended">Recommended</span> are strongly advised.
+    </p>
+
+    <h2>Deployment flow at-a-glance</h2>
+    <table>
+        <thead>
+            <tr><th>Step</th><th>Area</th><th>Portal</th><th>Priority</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>1</td><td>Licensing</td><td>Microsoft 365 Admin Center</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>2</td><td>Entra ID Device Join</td><td>Entra Admin Center</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>3</td><td>Intune Auto-Enrollment</td><td>Entra Admin Center</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>4</td><td>Enrollment Restrictions</td><td>Intune Admin Center</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>5</td><td>SSO on Cloud PCs</td><td>Intune Admin Center</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>6</td><td>Conditional Access</td><td>Entra Admin Center</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>7</td><td>FIDO2 / Auth Methods</td><td>Entra Admin Center</td><td><span class="tag tag-recommended">Recommended</span></td></tr>
+            <tr><td>8</td><td>Teams VDI 2.0</td><td>Teams Admin / PowerShell</td><td><span class="tag tag-recommended">Recommended</span></td></tr>
+            <tr><td>9</td><td>Network / Firewall</td><td>Network infrastructure</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>10</td><td>Onboarding Strategy</td><td>—</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>11</td><td>End-to-End Validation</td><td>—</td><td><span class="tag tag-required">Required</span></td></tr>
+        </tbody>
+    </table>
+
+    <div class="nav-buttons">
+        <div></div>
+        <button class="btn btn-primary" onclick="navigateTo('licensing')">Begin Assessment &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== LICENSING ==================== -->
+<section class="doc-section" id="section-licensing">
+    <h1>Step 1: Licensing</h1>
+    <p class="section-description">
+        Windows 365 Link requires specific licenses for both the device management plane and the Cloud PC service. Missing any license results in silent failures during enrollment or connection.
+    </p>
+
+    <div class="callout support-risk">
+        <div class="callout-title">&#x1F6A8; Support Case Risk</div>
+        <strong>Missing Entra ID Premium license:</strong> Without this license, automatic MDM enrollment silently fails. The device joins Entra ID but never appears in Intune. Admins often don't discover this until they try to find the device in Intune — sometimes days after deployment.
+    </div>
+
+    <h2>Required licenses</h2>
+    <ul class="checklist" data-section="licensing">
+        <li>
+            <input type="checkbox" id="lic-1">
+            <div class="check-content">
+                <div class="check-label">Windows 365 Enterprise, Frontline, or Business license</div>
+                <div class="check-detail">Provides the Cloud PC that Link connects to. Windows 365 Business also requires Intune.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="lic-2">
+            <div class="check-content">
+                <div class="check-label">Microsoft Intune license</div>
+                <div class="check-detail">Required for device management. Included with some M365 plans (E3/E5, Business Premium).</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="lic-3">
+            <div class="check-content">
+                <div class="check-label">Microsoft Entra ID Premium license (P1 or P2)</div>
+                <div class="check-detail">Required for automatic MDM enrollment during Entra join. Without it, devices join Entra but do NOT enroll in Intune.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="lic-4">
+            <div class="check-content">
+                <div class="check-label">Cloud PC is provisioned for each target user</div>
+                <div class="check-detail">Users must have an active Cloud PC before they can connect from a Link device.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> GCC / Government customers
+        </div>
+        <div class="expand-body">
+            <p>Windows 365 Link can only be used with the <strong>Windows 365 Enterprise/Frontline for FedRAMP GCC</strong> offering. Windows 365 Business is not supported for GCC. See <a href="https://learn.microsoft.com/en-us/windows-365/enterprise/introduction-windows-365-government" target="_blank">What is Windows 365 Government?</a></p>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('overview')">&larr; Overview</button>
+        <button class="btn btn-primary" onclick="navigateTo('entra-join')">Next: Entra ID Join &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== ENTRA JOIN ==================== -->
+<section class="doc-section" id="section-entra-join">
+    <h1>Step 2: Microsoft Entra ID — Device Join</h1>
+    <p class="section-description">
+        Windows 365 Link must be Microsoft Entra joined. During the Out of Box Experience (OOBE), the first user signs in and the device joins their tenant. Users must have permission to join devices.
+    </p>
+
+    <div class="callout warning">
+        <div class="callout-title">&#9888;&#65039; Common pitfall</div>
+        If <strong>"Users may join devices to Microsoft Entra"</strong> is set to <strong>"Selected"</strong>, make sure your target users are in the selected group. If it's set to <strong>"None"</strong>, no Windows 365 Link devices can be joined. This manifests as an error during OOBE with no clear remediation path for the user.
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="entra-join">
+        <li>
+            <input type="checkbox" id="ej-1">
+            <div class="check-content">
+                <div class="check-label">Entra ID device join is enabled for target users</div>
+                <div class="check-detail">Entra admin center → Identity → Devices → Overview → Device Settings → "Users may join devices to Microsoft Entra" set to All or Selected.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ej-2">
+            <div class="check-content">
+                <div class="check-label">"Maximum number of devices per user" is adequate</div>
+                <div class="check-detail">Default is 50. If using a DEM account for bulk onboarding, this limit applies per DEM user. Consider increasing it.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ej-3">
+            <div class="check-content">
+                <div class="check-label">If "Selected" — confirmed target user groups include all Link device users</div>
+                <div class="check-detail">The selected groups must be Entra ID groups containing user objects (not device objects).</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="callout support-risk">
+        <div class="callout-title">&#x1F6A8; Support Case Risk</div>
+        <strong>Device join limit reached:</strong> The default is 50 devices per user. If a Device Enrollment Manager (DEM) is onboarding many Link devices under one account, they'll hit this limit silently. The OOBE will fail with a generic error, and neither the admin nor the user will know why.
+    </div>
+
+    <div class="step-card">
+        <h3><span class="step-num">&#10003;</span> How to verify</h3>
+        <div class="portal-path">Entra admin center → Identity → Devices → Overview → Device Settings</div>
+        <p>Confirm that the <strong>"Users may join devices to Microsoft Entra"</strong> setting is either <strong>All</strong> or <strong>Selected</strong> with the correct groups. Check the device limit value to accommodate expected device counts.</p>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('licensing')">&larr; Licensing</button>
+        <button class="btn btn-primary" onclick="navigateTo('intune-enrollment')">Next: Intune Enrollment &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== INTUNE ENROLLMENT ==================== -->
+<section class="doc-section" id="section-intune-enrollment">
+    <h1>Step 3: Intune Automatic Enrollment</h1>
+    <p class="section-description">
+        After a Windows 365 Link device joins Entra ID, it must automatically enroll in Intune via the <strong>MDM User Scope</strong> setting. Without this, devices join Entra but <em>silently never appear in Intune</em> — one of the most confusing failure modes.
+    </p>
+
+    <div class="callout error">
+        <div class="callout-title">&#x1F6D1; Critical — silent failure</div>
+        If <strong>MDM user scope</strong> is set to <strong>"None"</strong>, or the user isn't in scope, the device completes OOBE successfully but is <strong>never managed</strong>. The device appears in Entra ID but <em>not</em> in Intune. There is no error shown to the user or admin during enrollment. This is the second most common support issue for new deployments.
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="intune-enrollment">
+        <li>
+            <input type="checkbox" id="ie-1">
+            <div class="check-content">
+                <div class="check-label">MDM User Scope is set to "All" or "Some"</div>
+                <div class="check-detail">Entra admin center → Settings → Mobility → Microsoft Intune → MDM user scope.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ie-2">
+            <div class="check-content">
+                <div class="check-label">If "Some" — target users are in the selected groups</div>
+                <div class="check-detail">Ensure the groups contain the user objects who will be onboarding Link devices.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ie-3">
+            <div class="check-content">
+                <div class="check-label">No conflicting MDM applications on the Mobility page</div>
+                <div class="check-detail">If there are multiple applications listed, confirm only Microsoft Intune has MDM user scope enabled. Having conflicting MDM apps causes enrollment to go to the wrong MDM.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ie-4">
+            <div class="check-content">
+                <div class="check-label">MDM Authority is set to "Microsoft Intune"</div>
+                <div class="check-detail">Intune admin center → Tenant administration → Tenant status → Tenant details.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="step-card">
+        <h3><span class="step-num">&#10003;</span> How to verify</h3>
+        <div class="portal-path">Entra admin center → Show more → Settings → Mobility (MDM and WIP) → Microsoft Intune</div>
+        <p>Confirm <strong>MDM user scope</strong> is set to <strong>All</strong> or <strong>Some</strong> (with correct groups). Then verify in Intune admin center that <strong>MDM authority</strong> shows "Microsoft Intune".</p>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('entra-join')">&larr; Entra ID Join</button>
+        <button class="btn btn-primary" onclick="navigateTo('enrollment-restrictions')">Next: Enrollment Restrictions &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== ENROLLMENT RESTRICTIONS ==================== -->
+<section class="doc-section" id="section-enrollment-restrictions">
+    <h1>Step 4: Enrollment Restrictions</h1>
+    <p class="section-description">
+        Windows 365 Link devices initially appear as <strong>"Unknown"</strong> ownership during enrollment. Any Intune platform restriction that blocks personally owned or unknown Windows devices will also block Link devices from enrolling. This is a very common and confusing deployment blocker.
+    </p>
+
+    <div class="callout error">
+        <div class="callout-title">&#x1F6D1; Critical — enrollment silently blocked</div>
+        Many organizations have an existing restriction blocking personal Windows devices. Because Link devices are <strong>"Unknown" at enrollment time</strong> (before they become "Corporate-owned" after join), they are caught by this restriction. The OOBE fails with a generic enrollment error.
+    </div>
+
+    <h2>Do you have restrictions blocking personal Windows devices?</h2>
+    <div class="decision-node" id="restriction-decision">
+        <div class="decision-question">Does your environment have an Intune platform restriction that blocks personally owned Windows devices?</div>
+        <div class="decision-options">
+            <button class="decision-btn" onclick="selectDecision(this, 'restriction-yes')">Yes, we block personal</button>
+            <button class="decision-btn" onclick="selectDecision(this, 'restriction-no')">No / Not sure</button>
+        </div>
+        <div class="decision-result info" id="restriction-yes" style="background: var(--info-bg);">
+            <strong>Action needed.</strong> You must use one of these three methods to allow Link devices through:
+            <ol style="margin-top:8px; padding-left:20px;">
+                <li><strong>Corporate Identifiers</strong> — Pre-upload serial numbers so devices are recognized as corporate before restrictions apply</li>
+                <li><strong>OS SKU Filter</strong> — Create a higher-priority policy with an Intune filter for Windows CPC (210) to allow Link devices</li>
+                <li><strong>Device Enrollment Manager</strong> — DEM accounts bypass all platform restrictions</li>
+            </ol>
+        </div>
+        <div class="decision-result success" id="restriction-no" style="background: var(--success-bg);">
+            <strong>Likely OK.</strong> If you don't block personal devices, Link devices should enroll successfully. However, we still recommend creating an Intune filter for Windows 365 Link devices for future policy targeting.
+        </div>
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="enrollment-restrictions">
+        <li>
+            <input type="checkbox" id="er-1">
+            <div class="check-content">
+                <div class="check-label">Reviewed existing Windows platform enrollment restrictions</div>
+                <div class="check-detail">Intune admin center → Devices → Enrollment → Windows → Device platform restriction → Windows restrictions.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="er-2">
+            <div class="check-content">
+                <div class="check-label">If blocking personal devices: implemented bypass method (Corporate IDs, SKU filter, or DEM)</div>
+                <div class="check-detail">See the decision tree above. At least one method must be in place before OOBE.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="er-3">
+            <div class="check-content">
+                <div class="check-label">Created an Intune filter for Windows 365 Link devices</div>
+                <div class="check-detail">Intune → Tenant admin → Filters → Create → Platform: Windows 10 and later → Property: operatingSystemSKU → Equals → WCPC (Windows CPC (210)).</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> How to upload Corporate Identifiers
+        </div>
+        <div class="expand-body">
+            <p>Create a CSV file with: <code>Microsoft Corporation,Windows 365 Link,&lt;SerialNumber&gt;</code></p>
+            <p>Serial numbers are on the bottom of the device and on the original packaging.</p>
+            <div class="portal-path">Intune admin center → Devices → Enrollment → Corporate device identifiers → Add → Upload CSV file</div>
+            <p>Select identifier type: <strong>Manufacturer, model, and serial number (Windows only)</strong>. Wait for validation, then select <strong>Add</strong>.</p>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('intune-enrollment')">&larr; Intune Enrollment</button>
+        <button class="btn btn-primary" onclick="navigateTo('sso')">Next: SSO Configuration &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== SSO ==================== -->
+<section class="doc-section" id="section-sso">
+    <h1>Step 5: Single Sign-On (SSO) Configuration</h1>
+    <p class="section-description">
+        Windows 365 Link <strong>can only connect to Cloud PCs that have Entra ID SSO enabled</strong>. This is <em>not</em> optional. Additionally, the SSO consent prompt must be suppressed or users will face connection failures. These two requirements together are the <strong>#1 source of support cases</strong>.
+    </p>
+
+    <div class="callout error">
+        <div class="callout-title">&#x1F6D1; Critical — connection will fail without SSO</div>
+        If SSO is not enabled on the Cloud PC's provisioning policy, the user sees: <em>"Your Cloud PC does not support Entra ID single sign-on."</em> The fix requires editing the provisioning policy and re-provisioning or applying the change.
+    </div>
+
+    <div class="callout warning">
+        <div class="callout-title">&#9888;&#65039; SSO Consent Prompt — recurring failure</div>
+        Even with SSO enabled, users are prompted for consent the first time and <strong>every 30 days</strong>. Link uses a non-interactive SSO connection that <em>cannot show this prompt</em>. The user sees: <em>"Failed to open a Microsoft Entra ID credential prompt"</em>. The only workaround is to connect from a different device first. <strong>Suppressing the consent prompt is essential.</strong>
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="sso">
+        <li>
+            <input type="checkbox" id="sso-1">
+            <div class="check-content">
+                <div class="check-label">SSO is enabled on ALL Cloud PC provisioning policies used by Link users</div>
+                <div class="check-detail">Intune → Devices → Windows 365 → Provisioning policies → Edit → Enable single sign-on.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="sso-2">
+            <div class="check-content">
+                <div class="check-label">Verified SSO status on existing Cloud PCs</div>
+                <div class="check-detail">Intune → Devices → Windows 365 → All Cloud PCs → Add column "Using single sign-on" → Confirm all target PCs show "Yes".</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="sso-3">
+            <div class="check-content">
+                <div class="check-label">Created a dynamic device group for all Cloud PCs</div>
+                <div class="check-detail">Required for SSO consent suppression. Membership rule should target Cloud PC device objects.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="sso-4">
+            <div class="check-content">
+                <div class="check-label">Enabled Entra authentication for RDP on SSO service principals</div>
+                <div class="check-detail">Configure the "Windows Cloud Login" and "Azure Virtual Desktop" service principals.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="sso-5">
+            <div class="check-content">
+                <div class="check-label">Added Cloud PC group to the Service Principal target (consent suppression)</div>
+                <div class="check-detail">This hides the consent dialog so Link devices can connect without user interaction.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="sso-6">
+            <div class="check-content">
+                <div class="check-label">If using Conditional Access with Cloud PCs — included SSO Cloud App in CA policy target resources</div>
+                <div class="check-detail">The SSO service principal must be in the CA policy target resources alongside Windows 365 and Azure Virtual Desktop.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="callout info">
+        <div class="callout-title">&#x2139;&#65039; Note — December 2025 Update (26100.7462+)</div>
+        Devices on build 26100.7462 or later can now show interactive SSO consent prompts. However, Microsoft still <strong>strongly recommends</strong> suppressing the prompt to avoid a degraded user experience.
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('enrollment-restrictions')">&larr; Enrollment Restrictions</button>
+        <button class="btn btn-primary" onclick="navigateTo('conditional-access')">Next: Conditional Access &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== CONDITIONAL ACCESS ==================== -->
+<section class="doc-section" id="section-conditional-access">
+    <h1>Step 6: Conditional Access Policies</h1>
+    <p class="section-description">
+        Windows 365 Link authentication happens in <strong>two stages</strong>, and each stage triggers different Conditional Access policies. Misalignment between these stages is the <strong>#3 cause of support cases</strong> and produces the confusing error: <em>"An interactive window could not be shown."</em>
+    </p>
+
+    <div class="callout support-risk">
+        <div class="callout-title">&#x1F4CA; Understanding the two-stage authentication</div>
+        <table style="margin-top:8px">
+            <thead>
+                <tr><th>Stage</th><th>Type</th><th>CA Policy Trigger</th><th>Can prompt user?</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>1. Sign-in</strong></td><td>Interactive</td><td>User actions: "Register or join devices"</td><td>&#10004; Yes</td></tr>
+                <tr><td><strong>2. Connect to Cloud PC</strong></td><td>Non-interactive SSO</td><td>Resources: Windows 365, Azure Virtual Desktop, Windows Cloud Login</td><td>&#10008; No</td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top:8px">If Stage 2 requires MFA but Stage 1 didn't satisfy it (because there's no matching user-action policy), the connection is blocked.</p>
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="conditional-access">
+        <li>
+            <input type="checkbox" id="ca-1">
+            <div class="check-content">
+                <div class="check-label">Used the "What If" tool to identify CA policies applied to Windows 365 resources</div>
+                <div class="check-detail">Entra admin center → Protection → Conditional Access → What If. Test with Windows 365 (0af06dc6), Azure Virtual Desktop (9cdead84), Windows Cloud Login (270efc09).</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ca-2">
+            <div class="check-content">
+                <div class="check-label">Created a CA policy for user action "Register or join devices" with matching controls</div>
+                <div class="check-detail">The Grant controls on this policy must match (or be stronger than) the Resource policies found with What If. Exclude emergency/break-glass accounts.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ca-3">
+            <div class="check-content">
+                <div class="check-label">Tested the new policy in Report-Only mode first</div>
+                <div class="check-detail">Set "Enable policy" to Report-only, validate via sign-in logs, then switch to On.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ca-4">
+            <div class="check-content">
+                <div class="check-label">Confirmed no unsupported Grant or Session controls on user-action policy</div>
+                <div class="check-detail">Device compliance, custom controls, and sign-in frequency CANNOT be used with "Register or join devices" user actions. These will cause failures.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> Unsupported controls for "Register or join devices" policies
+        </div>
+        <div class="expand-body">
+            <p>The following controls are <strong>NOT</strong> supported when the target is a user action (Register or join devices):</p>
+            <table>
+                <thead>
+                    <tr><th>Control type</th><th>Unsupported control</th><th>Impact</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Grant</td><td>Require device to be marked as compliant</td><td>Can't evaluate compliance during registration</td></tr>
+                    <tr><td>Grant</td><td>Custom controls (legacy)</td><td>Not available for user actions</td></tr>
+                    <tr><td>Session</td><td>Sign-in frequency</td><td>Not applicable to device registration</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('sso')">&larr; SSO Configuration</button>
+        <button class="btn btn-primary" onclick="navigateTo('authentication')">Next: Authentication &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== AUTHENTICATION ==================== -->
+<section class="doc-section" id="section-authentication">
+    <h1>Step 7: Authentication Methods <span class="tag tag-recommended">Recommended</span></h1>
+    <p class="section-description">
+        Windows 365 Link supports two sign-in methods: <strong>Web sign-in</strong> (enabled by default) and <strong>FIDO2 security keys</strong> (requires configuration). Microsoft <em>strongly recommends</em> enabling FIDO2 for the best security and user experience.
+    </p>
+
+    <div class="callout warning">
+        <div class="callout-title">&#9888;&#65039; Certificate-based authentication (CBA) is NOT supported</div>
+        If your organization relies on Microsoft Entra certificate-based authentication, it <strong>cannot</strong> be used for Web sign-in on Windows 365 Link. Plan alternative authentication methods before deployment.
+    </div>
+
+    <div class="callout warning">
+        <div class="callout-title">&#9888;&#65039; Third-party IdP custom controls — enrollment breaks</div>
+        If your third-party identity provider uses <strong>custom controls</strong> to integrate with Entra ID, these do <strong>not</strong> support Intune device enrollment or Entra ID join. Use Entra's <strong>external authentication method</strong> instead of custom controls.
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="authentication">
+        <li>
+            <input type="checkbox" id="auth-1">
+            <div class="check-content">
+                <div class="check-label">FIDO2 security key sign-in is enabled in Entra ID</div>
+                <div class="check-detail">Entra admin center → Protection → Authentication methods → FIDO2 security key → Enable for target users. Without this, the security key icon won't appear.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="auth-2">
+            <div class="check-content">
+                <div class="check-label">Confirmed Link sign-in screen shows both icons (globe + security key)</div>
+                <div class="check-detail">If only the globe icon appears, FIDO2 is not configured for the tenant/user.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="auth-3">
+            <div class="check-content">
+                <div class="check-label">If using third-party IdP — verified no custom controls are in use</div>
+                <div class="check-detail">Custom controls can't satisfy MFA, can't support enrollment, and can't support Entra join.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> Web sign-in authentication options
+        </div>
+        <div class="expand-body">
+            <p>Web sign-in supports the following Entra ID authentication methods (no device configuration needed):</p>
+            <ul style="padding-left:20px; margin-top:8px;">
+                <li>Username and password</li>
+                <li>Phone sign-in with Microsoft Authenticator</li>
+                <li>FIDO2 security key (via web sign-in flow)</li>
+                <li>Passkey on another device via cross-device authentication</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('conditional-access')">&larr; Conditional Access</button>
+        <button class="btn btn-primary" onclick="navigateTo('teams')">Next: Teams &amp; Media &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== TEAMS ==================== -->
+<section class="doc-section" id="section-teams">
+    <h1>Step 8: Microsoft Teams &amp; Media Optimizations <span class="tag tag-recommended">Recommended</span></h1>
+    <p class="section-description">
+        Windows 365 Link uses the <strong>VDI 2.0 solution for Teams</strong> for media optimizations (audio/video). The VDI component is preinstalled on the device, but the Teams admin must ensure users are in scope for the new VDI policy.
+    </p>
+
+    <div class="callout support-risk">
+        <div class="callout-title">&#x1F6A8; Support Case Risk</div>
+        <strong>Teams media quality / performance issues:</strong> If the Teams VDI 2.0 policy doesn't include Link users, media optimizations won't activate. Audio and video calls will work but will route through the Cloud PC without local optimization — resulting in poor quality that generates support cases.
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="teams">
+        <li>
+            <input type="checkbox" id="teams-1">
+            <div class="check-content">
+                <div class="check-label">Verified Teams VDI 2.0 policy includes Link users</div>
+                <div class="check-detail">Check the Microsoft Teams PowerShell policy for optimization. Ensure users signing in to Link devices are in scope for the VDI policy.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="teams-2">
+            <div class="check-content">
+                <div class="check-label">Confirmed multimedia redirection is working in a test call</div>
+                <div class="check-detail">Make a test call from a Link device and verify audio/video quality. Local redirection should handle media.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> More about VDI 2.0 for Teams
+        </div>
+        <div class="expand-body">
+            <p>The VDI 2.0 solution for Teams is the latest optimization approach that handles media locally on the endpoint for improved call quality. Windows 365 Link includes this component in its operating system — no installation needed. However, the server-side Teams policy must be configured to allow VDI optimization for these users.</p>
+            <p>For full details, see <a href="https://learn.microsoft.com/en-us/MicrosoftTeams/vdi-2" target="_blank">New VDI solution for Teams</a>.</p>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('authentication')">&larr; Authentication</button>
+        <button class="btn btn-primary" onclick="navigateTo('network')">Next: Network &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== NETWORK ==================== -->
+<section class="doc-section" id="section-network">
+    <h1>Step 9: Network Requirements</h1>
+    <p class="section-description">
+        Windows 365 Link has the same network requirements as Azure Virtual Desktop end user devices. Firewall and proxy configurations must allow these connections or the device will fail to connect.
+    </p>
+
+    <div class="callout info">
+        <div class="callout-title">&#x2139;&#65039; Key network requirements</div>
+        All traffic from Windows 365 Link to Windows 365 services uses <strong>TLS 1.2 or greater</strong>. The device needs outbound HTTPS (443) access to Microsoft Entra ID, Intune, and Windows 365/AVD service endpoints.
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="network">
+        <li>
+            <input type="checkbox" id="net-1">
+            <div class="check-content">
+                <div class="check-label">Reviewed Azure Virtual Desktop required FQDNs/endpoints for end user devices</div>
+                <div class="check-detail">See <a href="https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint?tabs=azure#end-user-devices" target="_blank">AVD Required FQDN and endpoints</a>.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="net-2">
+            <div class="check-content">
+                <div class="check-label">Firewall/proxy allows outbound HTTPS to Microsoft Entra, Intune, and W365 services</div>
+                <div class="check-detail">Ensure *.microsoft.com, login.microsoftonline.com, *.windows.net, and related endpoints are not blocked.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="net-3">
+            <div class="check-content">
+                <div class="check-label">WiFi or Ethernet connectivity available at deployment locations</div>
+                <div class="check-detail">Link supports WiFi 6E and 1 Gbps Ethernet. Captive portal WiFi is supported on build 26100.6584+.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="net-4">
+            <div class="check-content">
+                <div class="check-label">TLS inspection (if any) does not break Microsoft service connections</div>
+                <div class="check-detail">TLS inspection/SSL decryption can interfere with certificate pinning used by Link. Test connectivity before bulk deployment.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('teams')">&larr; Teams &amp; Media</button>
+        <button class="btn btn-primary" onclick="navigateTo('onboarding')">Next: Onboarding &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== ONBOARDING ==================== -->
+<section class="doc-section" id="section-onboarding">
+    <h1>Step 10: Onboarding Strategy</h1>
+    <p class="section-description">
+        Windows 365 Link supports two onboarding approaches: <strong>Admin-driven</strong> (using a Device Enrollment Manager) and <strong>User-driven</strong> (user completes OOBE themselves). Choose the right model based on your deployment scenario.
+    </p>
+
+    <h2>Which onboarding model is right for you?</h2>
+    <div class="decision-node" id="onboard-decision">
+        <div class="decision-question">How will your Link devices primarily be used?</div>
+        <div class="decision-options">
+            <button class="decision-btn" onclick="selectDecision(this, 'onboard-shared')">Shared by multiple users</button>
+            <button class="decision-btn" onclick="selectDecision(this, 'onboard-dedicated')">Dedicated to one user</button>
+            <button class="decision-btn" onclick="selectDecision(this, 'onboard-mixed')">Mix of both</button>
+        </div>
+        <div class="decision-result" id="onboard-shared" style="background: var(--info-bg);">
+            <strong>Recommended: Admin-driven with DEM account.</strong>
+            <ul style="margin-top:8px; padding-left:20px;">
+                <li>Create a dedicated DEM account with required licenses (Entra Premium + Intune + Windows)</li>
+                <li>DEM bypasses enrollment restrictions and device limits</li>
+                <li>DEM is set as primary user, but any org user can sign in</li>
+                <li>Increase "Maximum devices per user" for the DEM account</li>
+                <li>Provision a test Cloud PC for the DEM account to validate connectivity</li>
+            </ul>
+        </div>
+        <div class="decision-result" id="onboard-dedicated" style="background: var(--success-bg);">
+            <strong>Recommended: User-driven onboarding.</strong>
+            <ul style="margin-top:8px; padding-left:20px;">
+                <li>Ship devices directly to users</li>
+                <li>Ensure each user has correct licenses and permissions</li>
+                <li>User becomes primary user of the device</li>
+                <li>User must have a Cloud PC provisioned WITH SSO and consent already granted</li>
+            </ul>
+        </div>
+        <div class="decision-result" id="onboard-mixed" style="background: var(--warning-bg);">
+            <strong>Use both methods as appropriate.</strong>
+            <ul style="margin-top:8px; padding-left:20px;">
+                <li>Admin-driven for shared/hot-desk devices</li>
+                <li>User-driven for personal devices shipped to users</li>
+                <li>Ensure both paths are tested before bulk deployment</li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>Post-onboarding checklist</h2>
+    <ul class="checklist" data-section="onboarding">
+        <li>
+            <input type="checkbox" id="ob-1">
+            <div class="check-content">
+                <div class="check-label">Decided on onboarding model (Admin, User, or mixed)</div>
+                <div class="check-detail">Use the decision tree above to guide your choice.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ob-2">
+            <div class="check-content">
+                <div class="check-label">If Admin-driven: DEM account created, licensed, and tested</div>
+                <div class="check-detail">Verify the DEM can complete OOBE successfully and connect to a test Cloud PC.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ob-3">
+            <div class="check-content">
+                <div class="check-label">First device onboarded, updated, and verified in Intune</div>
+                <div class="check-detail">After OOBE, disconnect → restart → update → shut down. Then verify the device appears in both Entra and Intune.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="ob-4">
+            <div class="check-content">
+                <div class="check-label">Recommended post-onboard configs applied (time zone, screen timeout)</div>
+                <div class="check-detail">Auto Detect Local Time Zone is strongly recommended. Screen timeout can be customized to your needs.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('network')">&larr; Network</button>
+        <button class="btn btn-primary" onclick="navigateTo('validation')">Next: Validation &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== VALIDATION ==================== -->
+<section class="doc-section" id="section-validation">
+    <h1>Step 11: End-to-End Validation</h1>
+    <p class="section-description">
+        Before bulk deployment, perform an end-to-end validation with at least one Link device. This final section ensures all the pieces work together and helps you identify issues before they become support cases at scale.
+    </p>
+
+    <h2>Validation checklist</h2>
+    <ul class="checklist" data-section="validation">
+        <li>
+            <input type="checkbox" id="val-1">
+            <div class="check-content">
+                <div class="check-label">Device completes OOBE — joins Entra ID and enrolls in Intune</div>
+                <div class="check-detail">Verify the device appears in both the Entra admin center (Devices) and Intune admin center (Devices → All devices).</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="val-2">
+            <div class="check-content">
+                <div class="check-label">User connects to Cloud PC without errors</div>
+                <div class="check-detail">No SSO errors, no "interactive window" errors, no consent prompts.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="val-3">
+            <div class="check-content">
+                <div class="check-label">Second user can sign in to the same device and reach their own Cloud PC</div>
+                <div class="check-detail">Tests the shared device scenario. First user's data must not be accessible.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="val-4">
+            <div class="check-content">
+                <div class="check-label">Lock, sign-out, and disconnect all work correctly</div>
+                <div class="check-detail">Test Win+L, Ctrl+Alt+Del → Sign out, and Start → Power → Disconnect. Each should return to sign-in screen.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="val-5">
+            <div class="check-content">
+                <div class="check-label">Teams call works with audio/video (media optimization)</div>
+                <div class="check-detail">Make a test call and verify good quality — confirming VDI 2.0 is active.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="val-6">
+            <div class="check-content">
+                <div class="check-label">Device receives updates when in standby/sleep mode</div>
+                <div class="check-detail">Leave powered on overnight. OS updates occur automatically during off hours.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="val-7">
+            <div class="check-content">
+                <div class="check-label">Intune compliance shows device as compliant</div>
+                <div class="check-detail">Check compliance status: BitLocker, Secure Boot, and code integrity are enabled by default.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="callout success" id="completionBanner" style="display:none">
+        <div class="callout-title">&#10004; Deployment readiness assessment complete</div>
+        Congratulations! You've worked through all the preparation steps. Review any unchecked items before proceeding to bulk deployment.
+    </div>
+
+    <h2>Troubleshooting quick reference</h2>
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> "Your Cloud PC does not support Entra ID single sign-on"
+        </div>
+        <div class="expand-body">
+            <p><strong>Cause:</strong> SSO not enabled on Cloud PC provisioning policy.</p>
+            <p><strong>Fix:</strong> Edit the provisioning policy → Enable SSO → Apply to all affected Cloud PCs. See <a href="#" onclick="navigateTo('sso'); return false;">Step 5</a>.</p>
+        </div>
+    </div>
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> "Failed to open a Microsoft Entra ID credential prompt"
+        </div>
+        <div class="expand-body">
+            <p><strong>Cause:</strong> SSO consent prompt not suppressed. Happens first time, after reprovisioning, and every 30 days.</p>
+            <p><strong>Workaround:</strong> Connect from another device/web browser first to grant consent.</p>
+            <p><strong>Fix:</strong> Suppress the consent prompt on the SSO service principals. See <a href="#" onclick="navigateTo('sso'); return false;">Step 5</a>.</p>
+        </div>
+    </div>
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> "An interactive window could not be shown"
+        </div>
+        <div class="expand-body">
+            <p><strong>Cause:</strong> Conditional Access policy mismatch between sign-in (interactive) and connection (non-interactive) stages.</p>
+            <p><strong>Fix:</strong> Create a CA policy targeting user action "Register or join devices" with matching Grant controls. See <a href="#" onclick="navigateTo('conditional-access'); return false;">Step 6</a>.</p>
+        </div>
+    </div>
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> Device doesn't appear in Intune after OOBE
+        </div>
+        <div class="expand-body">
+            <p><strong>Cause 1:</strong> MDM User Scope not set, or user not in scope. See <a href="#" onclick="navigateTo('intune-enrollment'); return false;">Step 3</a>.</p>
+            <p><strong>Cause 2:</strong> Enrollment restriction blocking unknown/personal devices. See <a href="#" onclick="navigateTo('enrollment-restrictions'); return false;">Step 4</a>.</p>
+            <p><strong>Cause 3:</strong> Missing Entra ID Premium license for the onboarding user. See <a href="#" onclick="navigateTo('licensing'); return false;">Step 1</a>.</p>
+        </div>
+    </div>
+    <div class="expand-section">
+        <div class="expand-header" onclick="toggleExpand(this)">
+            <span class="chevron">&#9654;</span> OOBE fails during device join
+        </div>
+        <div class="expand-body">
+            <p><strong>Cause 1:</strong> User not permitted to join devices to Entra ID. See <a href="#" onclick="navigateTo('entra-join'); return false;">Step 2</a>.</p>
+            <p><strong>Cause 2:</strong> Maximum device limit reached for the user. Increase the limit in Entra device settings.</p>
+            <p><strong>Cause 3:</strong> Network connectivity issue — ensure device can reach Microsoft endpoints.</p>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('onboarding')">&larr; Onboarding</button>
+        <button class="btn btn-primary" onclick="navigateTo('overview')">&larr; Back to Overview</button>
+    </div>
+</section>
+
+</main>
+</div>
+
+<script>
+    // ========== STATE ==========
+    const sections = [
+        'overview','licensing','entra-join','intune-enrollment','enrollment-restrictions',
+        'sso','conditional-access','authentication','teams','network','onboarding','validation'
+    ];
+
+    // ========== NAVIGATION ==========
+    function navigateTo(sectionId) {
+        // Hide all sections
+        document.querySelectorAll('.doc-section').forEach(s => s.classList.remove('active'));
+        // Show target
+        const target = document.getElementById('section-' + sectionId);
+        if (target) target.classList.add('active');
+        // Update sidebar
+        document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+        const link = document.querySelector(`.sidebar-nav a[data-section="${sectionId}"]`);
+        if (link) {
+            link.classList.add('active');
+            link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        updateProgressBar();
+    }
+
+    // Sidebar click handlers
+    document.querySelectorAll('.sidebar-nav a').forEach(a => {
+        a.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateTo(a.dataset.section);
+        });
+    });
+
+    // ========== CHECKLISTS ==========
+    document.querySelectorAll('.checklist li').forEach(li => {
+        const cb = li.querySelector('input[type="checkbox"]');
+        li.addEventListener('click', (e) => {
+            if (e.target !== cb) cb.checked = !cb.checked;
+            li.classList.toggle('checked', cb.checked);
+            updateScores();
+        });
+    });
+
+    // ========== EXPANDABLE SECTIONS ==========
+    function toggleExpand(header) {
+        header.classList.toggle('open');
+        const body = header.nextElementSibling;
+        body.classList.toggle('open');
+    }
+
+    // ========== DECISION TREES ==========
+    function selectDecision(btn, resultId) {
+        const parent = btn.closest('.decision-node');
+        parent.querySelectorAll('.decision-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        parent.querySelectorAll('.decision-result').forEach(r => r.classList.remove('visible'));
+        const result = document.getElementById(resultId);
+        if (result) result.classList.add('visible');
+    }
+
+    // ========== SCORING ==========
+    function updateScores() {
+        const allCheckboxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+        const total = allCheckboxes.length;
+        const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked').length;
+        const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+        // Update ring
+        const ring = document.getElementById('scoreRing');
+        const circumference = 2 * Math.PI * 36; // ~226
+        ring.style.strokeDashoffset = circumference - (circumference * pct / 100);
+
+        // Color the ring based on score
+        if (pct < 40) ring.style.stroke = '#d13438';
+        else if (pct < 70) ring.style.stroke = '#e87400';
+        else if (pct < 100) ring.style.stroke = '#0078d4';
+        else ring.style.stroke = '#107c10';
+
+        document.getElementById('scoreText').textContent = pct + '%';
+        document.getElementById('scoreSummary').textContent =
+            pct === 100 ? 'All checks complete — ready to deploy!' :
+            `${checked} of ${total} checks completed`;
+
+        // Update section statuses
+        sections.forEach(sectionId => {
+            const status = document.getElementById('status-' + sectionId);
+            if (!status) return;
+            const sectionEl = document.getElementById('section-' + sectionId);
+            if (!sectionEl) return;
+            const sectionChecks = sectionEl.querySelectorAll('.checklist input[type="checkbox"]');
+            if (sectionChecks.length === 0) return;
+            const sectionChecked = sectionEl.querySelectorAll('.checklist input[type="checkbox"]:checked').length;
+            if (sectionChecked === sectionChecks.length) {
+                status.classList.add('complete');
+                status.innerHTML = '&#10003;';
+            } else if (sectionChecked > 0) {
+                status.classList.remove('complete');
+                status.classList.add('in-progress');
+                status.innerHTML = '&#8288;';
+            } else {
+                status.classList.remove('complete', 'in-progress');
+                status.innerHTML = '&#8288;';
+            }
+        });
+
+        // Show/hide completion banner
+        const banner = document.getElementById('completionBanner');
+        if (banner) banner.style.display = pct === 100 ? 'block' : 'none';
+
+        updateProgressBar();
+    }
+
+    function updateProgressBar() {
+        const currentIdx = sections.indexOf(
+            document.querySelector('.sidebar-nav a.active')?.dataset.section || 'overview'
+        );
+        const pct = ((currentIdx + 1) / sections.length) * 100;
+        document.getElementById('progressBar').style.width = pct + '%';
+    }
+
+    // ========== INIT ==========
+    function init() {
+        const total = document.querySelectorAll('.checklist input[type="checkbox"]').length;
+        document.getElementById('totalChecks').textContent = total;
+        updateScores();
+        updateProgressBar();
+    }
+
+    init();
+</script>
+
+</body>
+</html>
