@@ -784,6 +784,12 @@
         </div>
     </div>
 
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/requirements" target="_blank">Requirements for Windows 365 Link deployment</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/deployment-overview" target="_blank">Windows 365 Link deployment overview</a></li>
+    </ul>
+
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('overview')">&larr; Overview</button>
         <button class="btn btn-primary" onclick="navigateTo('entra-join')">Next: Entra ID Join &rarr;</button>
@@ -837,6 +843,12 @@
         <div class="portal-path">Entra admin center → Identity → Devices → Overview → Device Settings</div>
         <p>Confirm that the <strong>"Users may join devices to Microsoft Entra"</strong> setting is either <strong>All</strong> or <strong>Selected</strong> with the correct groups. Check the device limit value to accommodate expected device counts.</p>
     </div>
+
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/join-microsoft-entra" target="_blank">Allow joining Windows 365 Link to Microsoft Entra</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/entra/identity/devices/device-join-plan" target="_blank">Plan your Microsoft Entra join implementation</a></li>
+    </ul>
 
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('licensing')">&larr; Licensing</button>
@@ -893,6 +905,12 @@
         <div class="portal-path">Entra admin center → Show more → Settings → Mobility (MDM and WIP) → Microsoft Intune</div>
         <p>Confirm <strong>MDM user scope</strong> is set to <strong>All</strong> or <strong>Some</strong> (with correct groups). Then verify in Intune admin center that <strong>MDM authority</strong> shows "Microsoft Intune".</p>
     </div>
+
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/intune-automatic-enrollment" target="_blank">Automatically enroll Windows 365 Link in Intune</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/mem/intune/enrollment/windows-enroll" target="_blank">Set up automatic enrollment for Windows devices</a></li>
+    </ul>
 
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('entra-join')">&larr; Entra ID Join</button>
@@ -969,6 +987,13 @@
         </div>
     </div>
 
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/enrollment-restrictions" target="_blank">Configure enrollment restrictions for Windows 365 Link</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/create-intune-filter" target="_blank">Create an Intune filter for Windows 365 Link devices</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/mem/intune/enrollment/corporate-identifiers-add" target="_blank">Add corporate identifiers to Intune</a></li>
+    </ul>
+
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('intune-enrollment')">&larr; Intune Enrollment</button>
         <button class="btn btn-primary" onclick="navigateTo('sso')">Next: SSO Configuration &rarr;</button>
@@ -1042,6 +1067,15 @@
         <div class="callout-title">&#x2139;&#65039; Note — December 2025 Update (26100.7462+)</div>
         Devices on build 26100.7462 or later can now show interactive SSO consent prompts. However, Microsoft still <strong>strongly recommends</strong> suppressing the prompt to avoid a degraded user experience.
     </div>
+
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/requirements#suppress-single-sign-on-consent-prompts-for-windows-365-link" target="_blank">Suppress SSO consent prompts for Windows 365 Link</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/enterprise/configure-single-sign-on" target="_blank">Configure single sign-on for Windows 365</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/azure/virtual-desktop/configure-single-sign-on" target="_blank">Configure SSO — Enable Entra authentication for RDP</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/troubleshoot/windows-365/connection-fails-with-cloud-pc-does-not-support-entra-id-single-sign-on-sso" target="_blank">Troubleshoot: Cloud PC does not support Entra ID SSO</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/troubleshoot/windows-365/connection-fails-with-failed-to-open-a-microsoft-entra-id-credential-prompt" target="_blank">Troubleshoot: Failed to open a Microsoft Entra ID credential prompt</a></li>
+    </ul>
 
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('enrollment-restrictions')">&larr; Enrollment Restrictions</button>
@@ -1121,6 +1155,14 @@
         </div>
     </div>
 
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/conditional-access-policies" target="_blank">Conditional Access policies for Windows 365 Link</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/troubleshoot/windows-365/connection-error-interactive-window-not-shown" target="_blank">Troubleshoot: An interactive window could not be shown</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/enterprise/set-conditional-access-policies" target="_blank">Set Conditional Access policies for Windows 365</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/entra/identity/conditional-access/concept-conditional-access-cloud-apps#user-actions" target="_blank">Conditional Access — User actions</a></li>
+    </ul>
+
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('sso')">&larr; SSO Configuration</button>
         <button class="btn btn-primary" onclick="navigateTo('authentication')">Next: Authentication &rarr;</button>
@@ -1184,6 +1226,14 @@
         </div>
     </div>
 
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/sign-in-methods" target="_blank">Windows 365 Link sign-in methods</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/entra/identity/authentication/howto-authentication-passwordless-security-key-windows" target="_blank">Enable FIDO2 security key sign-in</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-methods" target="_blank">Authentication methods in Microsoft Entra ID</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/enterprise/choosing-authentication-method" target="_blank">Choosing the right passwordless credential solution</a></li>
+    </ul>
+
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('conditional-access')">&larr; Conditional Access</button>
         <button class="btn btn-primary" onclick="navigateTo('teams')">Next: Teams &amp; Media &rarr;</button>
@@ -1229,6 +1279,11 @@
             <p>For full details, see <a href="https://learn.microsoft.com/en-us/MicrosoftTeams/vdi-2" target="_blank">New VDI solution for Teams</a>.</p>
         </div>
     </div>
+
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/MicrosoftTeams/vdi-2" target="_blank">New VDI solution for Teams</a></li>
+    </ul>
 
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('authentication')">&larr; Authentication</button>
@@ -1278,6 +1333,12 @@
                 <div class="check-detail">TLS inspection/SSL decryption can interfere with certificate pinning used by Link. Test connectivity before bulk deployment.</div>
             </div>
         </li>
+    </ul>
+
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/requirements#network-requirements" target="_blank">Windows 365 Link network requirements</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint?tabs=azure#end-user-devices" target="_blank">AVD required FQDNs and endpoints — end user devices</a></li>
     </ul>
 
     <div class="nav-buttons">
@@ -1360,6 +1421,13 @@
                 <div class="check-detail">Auto Detect Local Time Zone is strongly recommended. Screen timeout can be customized to your needs.</div>
             </div>
         </li>
+    </ul>
+
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/onboarding" target="_blank">Onboard Windows 365 Link devices</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/setup" target="_blank">Set up your Windows 365 Link and sign in</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/mem/intune/enrollment/device-enrollment-manager-enroll" target="_blank">Device Enrollment Manager (DEM)</a></li>
     </ul>
 
     <div class="nav-buttons">
@@ -1482,6 +1550,16 @@
             <p><strong>Cause 3:</strong> Network connectivity issue — ensure device can reach Microsoft endpoints.</p>
         </div>
     </div>
+
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/troubleshooting" target="_blank">Troubleshooting Windows 365 Link</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/known-issues" target="_blank">Known issues: Windows 365 Link</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/whats-new" target="_blank">What's new in Windows 365 Link</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/sign-in" target="_blank">Sign in, sign out, or lock your Windows 365 Link</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/security-overview" target="_blank">Windows 365 Link security</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/device-management-overview" target="_blank">Device management overview for Windows 365 Link</a></li>
+    </ul>
 
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('onboarding')">&larr; Onboarding</button>
