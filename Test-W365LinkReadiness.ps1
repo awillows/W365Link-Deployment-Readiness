@@ -26,8 +26,27 @@
 .PARAMETER OpenReport
     Switch. Opens the report in the default browser after generation.
 
+.PARAMETER IncludeProvisioningPolicies
+    Optional. Array of provisioning policy names to include in the SSO check.
+    Only these policies will be evaluated — all others are excluded.
+    Cannot be used together with -ExcludeProvisioningPolicies.
+
+.PARAMETER ExcludeProvisioningPolicies
+    Optional. Array of provisioning policy names to exclude from the SSO check.
+    These policies will be shown separately and will not affect the readiness score.
+    Useful for policies assigned to Cloud PCs that won't be used with Link devices.
+    Cannot be used together with -IncludeProvisioningPolicies.
+
 .EXAMPLE
     .\Test-W365LinkReadiness.ps1 -UserUPN "admin@contoso.com" -OpenReport
+
+.EXAMPLE
+    .\Test-W365LinkReadiness.ps1 -ExcludeProvisioningPolicies "Hybrid/ Test policy","BYON TEST" -OpenReport
+    Runs the assessment but excludes the named policies from the SSO check.
+
+.EXAMPLE
+    .\Test-W365LinkReadiness.ps1 -IncludeProvisioningPolicies "AADJ Standard","Frontline" -OpenReport
+    Only evaluates SSO status on the named policies — all others are ignored.
 
 .NOTES
     Requires: Microsoft.Graph PowerShell module
@@ -52,10 +71,22 @@ param(
     [string]$OutputPath = ".\W365Link-ReadinessReport.html",
 
     [Parameter(Mandatory = $false)]
-    [switch]$OpenReport
+    [switch]$OpenReport,
+
+    [Parameter(Mandatory = $false)]
+    [string[]]$IncludeProvisioningPolicies,
+
+    [Parameter(Mandatory = $false)]
+    [string[]]$ExcludeProvisioningPolicies
 )
 
 #Requires -Version 5.1
+
+# Validate mutually exclusive parameters
+if ($IncludeProvisioningPolicies -and $ExcludeProvisioningPolicies) {
+    Write-Error "-IncludeProvisioningPolicies and -ExcludeProvisioningPolicies cannot be used together. Use one or the other."
+    return
+}
 
 # ============================================================================
 # REGION: Configuration & Constants
@@ -129,16 +160,30 @@ function Invoke-MgGraphSafe {
     )
     try {
         $fullUri = "https://graph.microsoft.com/$ApiVersion/$($Uri.TrimStart('/'))"
-        $response = Invoke-MgGraphRequest -Method $Method -Uri $fullUri -ErrorAction Stop
+        $response = Invoke-MgGraphRequest -Method $Method -Uri $fullUri -OutputType PSObject -ErrorAction Stop
         return $response
     }
     catch {
         $statusCode = $null
+        # Try standard HttpResponseMessage
         if ($_.Exception.Response) {
-            $statusCode = [int]$_.Exception.Response.StatusCode
+            try { $statusCode = [int]$_.Exception.Response.StatusCode } catch {}
+        }
+        # Fallback: .NET 5+ HttpRequestException exposes StatusCode directly
+        if (-not $statusCode -and $_.Exception.PSObject.Properties['StatusCode']) {
+            try { $statusCode = [int]$_.Exception.StatusCode } catch {}
+        }
+        # Fallback: parse well-known status names from the error message
+        if (-not $statusCode) {
+            $msg = $_.Exception.Message
+            if     ($msg -match 'NotFound')     { $statusCode = 404 }
+            elseif ($msg -match 'Forbidden')    { $statusCode = 403 }
+            elseif ($msg -match 'Unauthorized') { $statusCode = 401 }
+            elseif ($msg -match 'BadRequest')   { $statusCode = 400 }
+            elseif ($msg -match 'Conflict')     { $statusCode = 409 }
         }
         Write-Warning "Graph call failed: $Uri — $($_.Exception.Message)"
-        return @{ "_error" = $_.Exception.Message; "_statusCode" = $statusCode }
+        return [PSCustomObject]@{ "_error" = $_.Exception.Message; "_statusCode" = $statusCode }
     }
 }
 
@@ -320,41 +365,70 @@ function Test-EntraDeviceJoin {
     # Check azureADJoin setting
     $joinSetting = $regPolicy.azureADJoin
     if ($joinSetting) {
-        $allowedToJoin = $joinSetting.isAllowed
-        $appliesTo = $joinSetting.appliesTo  # "all", "selected", "none"
+        # Determine join scope — the API uses two different shapes:
+        #   Beta/legacy:  appliesTo = "all" | "selected" | "none" (or "0"/"1"/"2")
+        #   v1.0 (2024+): allowedToJoin with @odata.type polymorphic membership
+        $appliesTo = $joinSetting.appliesTo
 
-        if ($appliesTo -eq "0" -or $appliesTo -eq "none" -or $allowedToJoin -eq $false) {
+        # If appliesTo is missing/empty, derive it from the allowedToJoin OData type
+        if ([string]::IsNullOrWhiteSpace($appliesTo) -and $joinSetting.allowedToJoin) {
+            $odataType = $joinSetting.allowedToJoin.'@odata.type'
+            if ($odataType -like '*allDeviceRegistrationMembership*')        { $appliesTo = "all" }
+            elseif ($odataType -like '*enumeratedDeviceRegistrationMembership*') { $appliesTo = "selected" }
+            elseif ($odataType -like '*noDeviceRegistrationMembership*')     { $appliesTo = "none" }
+        }
+
+        # Normalise legacy numeric values
+        if ($appliesTo -eq "0") { $appliesTo = "none" }
+        elseif ($appliesTo -eq "1") { $appliesTo = "all" }
+        elseif ($appliesTo -eq "2") { $appliesTo = "selected" }
+
+        $allowedToJoin = $joinSetting.isAllowed
+
+        if ($appliesTo -eq "none" -or $allowedToJoin -eq $false) {
             Add-CheckResult -Category $category -CheckName "Users may join devices to Entra" `
-                -Status "Fail" -Detail "Device join is set to NONE. No users can join Windows 365 Link devices." `
+                -Status "Fail" -Detail "Device join is set to NONE. No users can join Windows 365 Link devices to Entra ID." `
                 -Remediation "Set 'Users may join devices to Microsoft Entra' to All or Selected in Entra admin center > Identity > Devices > Device Settings." `
                 -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/join-microsoft-entra" `
                 -RiskLevel "Critical"
         }
-        elseif ($appliesTo -eq "1" -or $appliesTo -eq "all") {
+        elseif ($appliesTo -eq "all") {
             Add-CheckResult -Category $category -CheckName "Users may join devices to Entra" `
                 -Status "Pass" -Detail "All users are allowed to join devices to Entra ID." -RiskLevel "Low"
         }
-        elseif ($appliesTo -eq "2" -or $appliesTo -eq "selected") {
+        elseif ($appliesTo -eq "selected") {
+            # Collect allowed groups/users from whichever shape the API returned
             $groupIds = @()
-            if ($joinSetting.allowedGroups) { $groupIds = $joinSetting.allowedGroups }
-            elseif ($joinSetting.allowedToJoin -and $joinSetting.allowedToJoin.groups) { $groupIds = $joinSetting.allowedToJoin.groups }
+            $userIds  = @()
+            if ($joinSetting.allowedToJoin) {
+                if ($joinSetting.allowedToJoin.groups) { $groupIds = $joinSetting.allowedToJoin.groups }
+                if ($joinSetting.allowedToJoin.users)  { $userIds  = $joinSetting.allowedToJoin.users }
+            }
+            if (-not $groupIds -and $joinSetting.allowedGroups) { $groupIds = $joinSetting.allowedGroups }
             $groupCount = ($groupIds | Measure-Object).Count
+            $userCount  = ($userIds  | Measure-Object).Count
+            $scopeDetail = @()
+            if ($groupCount -gt 0) { $scopeDetail += "$groupCount group(s)" }
+            if ($userCount  -gt 0) { $scopeDetail += "$userCount user(s)" }
+            $scopeText = if ($scopeDetail.Count -gt 0) { $scopeDetail -join " and " } else { "unknown membership — verify in portal" }
             Add-CheckResult -Category $category -CheckName "Users may join devices to Entra" `
-                -Status "Warning" -Detail "Device join is set to SELECTED ($groupCount groups). Ensure all Windows 365 Link users are in the selected groups." `
-                -Remediation "Verify target user groups in Entra admin center > Identity > Devices > Device Settings." `
+                -Status "Warning" -Detail "Device join is set to SELECTED ($scopeText). Ensure all Windows 365 Link users are included in the allowed scope." `
+                -Remediation "Verify target groups/users in Entra admin center > Identity > Devices > Device Settings > 'Users may join devices to Microsoft Entra'." `
                 -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/join-microsoft-entra" `
                 -RiskLevel "Medium"
         }
         else {
+            # Truly unknown — dump what we got for diagnostics
+            $raw = $joinSetting | ConvertTo-Json -Depth 4 -Compress -ErrorAction SilentlyContinue
             Add-CheckResult -Category $category -CheckName "Users may join devices to Entra" `
-                -Status "Info" -Detail "appliesTo = '$appliesTo'. Review manually." `
+                -Status "Warning" -Detail "Could not determine device join scope from the policy response. Raw azureADJoin value: $raw. Please verify manually in Entra admin center > Identity > Devices > Device Settings." `
                 -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/join-microsoft-entra" `
                 -RiskLevel "Medium"
         }
     }
     else {
         Add-CheckResult -Category $category -CheckName "Users may join devices to Entra" `
-            -Status "Info" -Detail "Could not parse azureADJoin setting from policy response. Review manually in Entra admin center." `
+            -Status "Warning" -Detail "The azureADJoin setting was not found in the device registration policy response. This can happen if Graph permissions are insufficient. Verify manually: Entra admin center > Identity > Devices > Device Settings > 'Users may join devices to Microsoft Entra'." `
             -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/join-microsoft-entra" `
             -RiskLevel "Medium"
     }
@@ -560,14 +634,42 @@ function Test-CloudPCSSO {
         return
     }
 
-    $policies = if ($provPolicies.value) { $provPolicies.value } else { @() }
+    $allPolicies = if ($provPolicies.value) { $provPolicies.value } else { @() }
     
-    if ($policies.Count -eq 0) {
+    if ($allPolicies.Count -eq 0) {
         Add-CheckResult -Category $category -CheckName "Cloud PC provisioning policies" `
             -Status "Warning" -Detail "No provisioning policies found. Either no Cloud PCs are configured or permissions are insufficient." `
             -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/enterprise/configure-single-sign-on" `
             -RiskLevel "Medium"
         return
+    }
+
+    # Apply include/exclude filtering
+    $policies = $allPolicies
+    $excludedPolicies = @()
+    $filterNote = ""
+
+    if ($IncludeProvisioningPolicies -and $IncludeProvisioningPolicies.Count -gt 0) {
+        $excludedPolicies = $allPolicies | Where-Object { $_.displayName -notin $IncludeProvisioningPolicies }
+        $policies = $allPolicies | Where-Object { $_.displayName -in $IncludeProvisioningPolicies }
+        $filterNote = "<div style='margin-top:6px;padding:8px 12px;background:#deecf9;border-radius:4px;font-size:12px;color:#0078d4'><strong>Filter applied:</strong> Only evaluating $($policies.Count) of $($allPolicies.Count) policies (include list). $($excludedPolicies.Count) policy(ies) excluded from scoring.</div>"
+        if ($policies.Count -eq 0) {
+            Add-CheckResult -Category $category -CheckName "Cloud PC provisioning policies" `
+                -Status "Warning" -Detail "None of the $($allPolicies.Count) provisioning policies matched the -IncludeProvisioningPolicies list. Check the policy names and try again." `
+                -RiskLevel "Medium"
+            return
+        }
+    }
+    elseif ($ExcludeProvisioningPolicies -and $ExcludeProvisioningPolicies.Count -gt 0) {
+        $excludedPolicies = $allPolicies | Where-Object { $_.displayName -in $ExcludeProvisioningPolicies }
+        $policies = $allPolicies | Where-Object { $_.displayName -notin $ExcludeProvisioningPolicies }
+        $filterNote = "<div style='margin-top:6px;padding:8px 12px;background:#deecf9;border-radius:4px;font-size:12px;color:#0078d4'><strong>Filter applied:</strong> Evaluating $($policies.Count) of $($allPolicies.Count) policies. $($excludedPolicies.Count) policy(ies) excluded from scoring.</div>"
+        if ($policies.Count -eq 0) {
+            Add-CheckResult -Category $category -CheckName "Cloud PC provisioning policies" `
+                -Status "Warning" -Detail "All $($allPolicies.Count) provisioning policies were excluded. Nothing left to evaluate." `
+                -RiskLevel "Medium"
+            return
+        }
     }
 
     $ssoDisabledPolicies = @()
@@ -610,47 +712,115 @@ function Test-CloudPCSSO {
         }
     }
 
+    # Build a combined HTML table for all provisioning policies
+    $evaluatedCount = $ssoEnabledPolicies.Count + $ssoDisabledPolicies.Count
+    $tableRows = ""
+    foreach ($name in ($ssoEnabledPolicies | Sort-Object)) {
+        $tableRows += "<tr><td style='padding:4px 12px;border-bottom:1px solid #eee'><span style='color:#107c10;font-weight:700'>&#x2705;</span> $name</td><td style='padding:4px 12px;border-bottom:1px solid #eee;color:#107c10;font-weight:600'>Enabled</td></tr>"
+    }
+    foreach ($name in ($ssoDisabledPolicies | Sort-Object)) {
+        $tableRows += "<tr><td style='padding:4px 12px;border-bottom:1px solid #eee'><span style='color:#d13438;font-weight:700'>&#x274C;</span> $name</td><td style='padding:4px 12px;border-bottom:1px solid #eee;color:#d13438;font-weight:600'>Disabled</td></tr>"
+    }
+
+    # Add excluded policies to the table (greyed out, not scored)
+    $excludedNames = @()
+    if ($excludedPolicies.Count -gt 0) {
+        foreach ($ep in ($excludedPolicies | Sort-Object { $_.displayName })) {
+            $excludedNames += $ep.displayName
+            $tableRows += "<tr><td style='padding:4px 12px;border-bottom:1px solid #eee;color:#999'><span style='color:#999'>&#x2796;</span> $($ep.displayName)</td><td style='padding:4px 12px;border-bottom:1px solid #eee;color:#999;font-style:italic'>Excluded</td></tr>"
+        }
+    }
+
+    $policyTable = "<table style='border-collapse:collapse;width:100%;margin-top:8px;font-size:13px'><thead><tr style='background:#f5f5f5'><th style='padding:6px 12px;text-align:left;border-bottom:2px solid #ddd'>Provisioning Policy</th><th style='padding:6px 12px;text-align:left;border-bottom:2px solid #ddd'>SSO Status</th></tr></thead><tbody>$tableRows</tbody></table>$filterNote"
+
     if ($ssoDisabledPolicies.Count -gt 0) {
-        $noSsoList = $ssoDisabledPolicies -join ", "
-        Add-CheckResult -Category $category -CheckName "SSO on provisioning policies" `
+        $summaryText = "$($ssoEnabledPolicies.Count) of $evaluatedCount evaluated provisioning policies have SSO enabled. Windows 365 Link CANNOT connect to Cloud PCs without SSO enabled — users will see: 'Your Cloud PC does not support Entra ID single sign-on.'$policyTable"
+        Add-CheckResult -Category $category -CheckName "SSO on provisioning policies ($($ssoEnabledPolicies.Count)/$evaluatedCount enabled)" `
             -Status "Fail" `
-            -Detail "SSO appears DISABLED on $($ssoDisabledPolicies.Count) policy(ies): $noSsoList. Windows 365 Link CANNOT connect to Cloud PCs without SSO enabled. Users will see: 'Your Cloud PC does not support Entra ID single sign-on.'" `
-            -Remediation "Edit each provisioning policy > Enable single sign-on, then apply to all affected Cloud PCs." `
+            -Detail $summaryText `
+            -Remediation "Edit each disabled provisioning policy in Intune > Devices > Windows 365 > Provisioning policies > Enable single sign-on. Existing Cloud PCs will use SSO on their next connection — no reprovisioning required." `
             -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/enterprise/configure-single-sign-on" `
             -RiskLevel "Critical"
     }
-    
-    if ($ssoEnabledPolicies.Count -gt 0) {
-        $ssoList = $ssoEnabledPolicies -join ", "
-        Add-CheckResult -Category $category -CheckName "SSO on provisioning policies" `
-            -Status "Pass" -Detail "SSO confirmed enabled on $($ssoEnabledPolicies.Count) policy(ies): $ssoList" -RiskLevel "Low"
+    else {
+        $summaryText = "All $evaluatedCount evaluated provisioning policies have SSO enabled.$(if ($excludedPolicies.Count -gt 0) { " ($($excludedPolicies.Count) excluded from scoring.)" })$policyTable"
+        Add-CheckResult -Category $category -CheckName "SSO on provisioning policies ($evaluatedCount/$evaluatedCount enabled)" `
+            -Status "Pass" -Detail $summaryText -RiskLevel "Low"
     }
 
-    if ($ssoDisabledPolicies.Count -gt 0 -and $ssoEnabledPolicies.Count -gt 0) {
-        Add-CheckResult -Category $category -CheckName "Mixed SSO state" `
-            -Status "Warning" -Detail "Some policies have SSO enabled and some don't. Ensure ALL policies used by Link users have SSO enabled." `
-            -Remediation "Review all provisioning policies in Intune > Devices > Windows 365 > Provisioning policies." `
-            -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/enterprise/configure-single-sign-on" `
-            -RiskLevel "High"
-    }
-
-    # Check for SSO consent suppression (service principals)
+    # Check for SSO consent suppression (service principals + targetDeviceGroups)
     Write-Host "    Checking SSO consent suppression..." -ForegroundColor Gray
-    $wclSP = Invoke-MgGraphSafe -Uri "/servicePrincipals?`$filter=appId eq '$WCLAppId'"
-    if (-not $wclSP._error) {
-        $spList = if ($wclSP.value) { $wclSP.value } else { @() }
-        if ($spList.Count -gt 0) {
-            Add-CheckResult -Category $category -CheckName "Windows Cloud Login service principal" `
-                -Status "Info" -Detail "Windows Cloud Login service principal exists. Verify consent suppression is configured (target group of Cloud PCs added)." `
+    
+    $ssoSPs = @(
+        @{ Name = "Windows Cloud Login"; AppId = $WCLAppId },
+        @{ Name = "Azure Virtual Desktop"; AppId = $AVDAppId }
+    )
+
+    foreach ($ssoSP in $ssoSPs) {
+        $spResponse = Invoke-MgGraphSafe -Uri "/servicePrincipals?`$filter=appId eq '$($ssoSP.AppId)'"
+        if ($spResponse._error) {
+            Add-CheckResult -Category $category -CheckName "$($ssoSP.Name) service principal" `
+                -Status "Error" -Detail "Could not query service principal: $($spResponse._error)" `
                 -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/requirements#suppress-single-sign-on-consent-prompts-for-windows-365-link" `
                 -RiskLevel "Medium"
+            continue
         }
-        else {
-            Add-CheckResult -Category $category -CheckName "Windows Cloud Login service principal" `
-                -Status "Warning" -Detail "Windows Cloud Login service principal not found. SSO consent prompts may not be suppressible yet. Users may face connection failures every 30 days." `
-                -Remediation "Follow the SSO consent suppression steps: create dynamic Cloud PC group, enable Entra auth for RDP, add group to SP target." `
+
+        $spList = if ($spResponse.value) { $spResponse.value } else { @() }
+        if ($spList.Count -eq 0) {
+            Add-CheckResult -Category $category -CheckName "$($ssoSP.Name) service principal" `
+                -Status "Warning" -Detail "'$($ssoSP.Name)' service principal not found in tenant. SSO consent suppression cannot be configured without it." `
+                -Remediation "Register the '$($ssoSP.Name)' enterprise app in Entra admin center > Enterprise Applications, or run: New-MgServicePrincipal -AppId '$($ssoSP.AppId)'" `
                 -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/requirements#suppress-single-sign-on-consent-prompts-for-windows-365-link" `
                 -RiskLevel "High"
+            continue
+        }
+
+        # Extract SP object ID
+        $sp = $spList[0]
+        $spId = $sp.id
+        
+        if (-not $spId) {
+            Add-CheckResult -Category $category -CheckName "$($ssoSP.Name) consent suppression" `
+                -Status "Warning" -Detail "Service principal found but could not extract its object ID. Check consent suppression manually in Entra admin center." `
+                -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/requirements#suppress-single-sign-on-consent-prompts-for-windows-365-link" `
+                -RiskLevel "High"
+            continue
+        }
+
+        # Check remoteDesktopSecurityConfiguration/targetDeviceGroups (beta)
+        $targetGroups = Invoke-MgGraphSafe -Uri "/servicePrincipals/$spId/remoteDesktopSecurityConfiguration/targetDeviceGroups" -ApiVersion "beta"
+        
+        if ($targetGroups._error) {
+            # If 404, RDP security config doesn't exist yet (not configured)
+            if ($targetGroups._statusCode -eq 404) {
+                Add-CheckResult -Category $category -CheckName "$($ssoSP.Name) consent suppression" `
+                    -Status "Fail" -Detail "Remote Desktop security configuration not found on '$($ssoSP.Name)'. SSO consent suppression is NOT configured. Users on Link will see: 'Failed to open a Microsoft Entra ID credential prompt' — recurring every 30 days." `
+                    -Remediation "Configure consent suppression: Entra admin center > Enterprise Apps > '$($ssoSP.Name)' > Properties > set 'Assignment required' to Yes > add your Cloud PC dynamic device group under 'Users and groups'." `
+                    -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/requirements#suppress-single-sign-on-consent-prompts-for-windows-365-link" `
+                    -RiskLevel "Critical"
+            }
+            else {
+                Add-CheckResult -Category $category -CheckName "$($ssoSP.Name) consent suppression" `
+                    -Status "Warning" -Detail "Could not query targetDeviceGroups: $($targetGroups._error). Check manually in Entra admin center." `
+                    -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/requirements#suppress-single-sign-on-consent-prompts-for-windows-365-link" `
+                    -RiskLevel "High"
+            }
+        }
+        else {
+            $groups = if ($targetGroups.value) { $targetGroups.value } else { @() }
+            if ($groups.Count -gt 0) {
+                $groupNames = ($groups | ForEach-Object { $_.displayName }) -join ", "
+                Add-CheckResult -Category $category -CheckName "$($ssoSP.Name) consent suppression" `
+                    -Status "Pass" -Detail "Consent suppression is configured with $($groups.Count) target device group(s): $groupNames" -RiskLevel "Low"
+            }
+            else {
+                Add-CheckResult -Category $category -CheckName "$($ssoSP.Name) consent suppression" `
+                    -Status "Fail" -Detail "Remote Desktop security configuration exists on '$($ssoSP.Name)' but NO target device groups are assigned. Consent suppression is incomplete — users will still be prompted." `
+                    -Remediation "Add your Cloud PC dynamic device group: Entra admin center > Enterprise Apps > '$($ssoSP.Name)' > Users and groups > Add the group containing Cloud PC device objects." `
+                    -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/requirements#suppress-single-sign-on-consent-prompts-for-windows-365-link" `
+                    -RiskLevel "Critical"
+            }
         }
     }
 }
@@ -1202,7 +1372,7 @@ function New-HtmlReport {
 
     $(
         if ($criticalCount -gt 0) {
-            "<div class='summary-message critical'><strong>&#x1F6D1; $criticalCount critical issue(s) found.</strong><br>These will prevent Windows 365 Link deployment. Address all critical items before proceeding.</div>"
+            "<div class='summary-message critical'><strong>&#x1F6D1; $criticalCount critical issue(s) found.</strong><br>These could affect Windows 365 Link deployment. Address all critical items before proceeding.</div>"
         }
         elseif ($failCount -gt 0 -or $warnCount -gt 0) {
             "<div class='summary-message warning'><strong>&#x26A0;&#xFE0F; $($failCount + $warnCount) issue(s) need attention.</strong><br>Review and address warnings and failures before deploying Link devices at scale.</div>"

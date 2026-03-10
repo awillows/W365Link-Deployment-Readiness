@@ -666,7 +666,7 @@
 <section class="doc-section active" id="section-overview">
     <div class="hero-banner">
         <h1>Windows 365 Link — Deployment Readiness Guide</h1>
-        <p>This interactive guide walks administrators through every prerequisite and configuration step needed to successfully deploy Windows 365 Link devices. Each section includes validation checklists and highlights common pitfalls that generate support cases.</p>
+        <p>This interactive guide walks administrators through every prerequisite and configuration step needed to successfully deploy Windows 365 Link devices. Each section includes validation checklists and highlights areas worth confirming before you begin.</p>
         <div class="hero-stats">
             <div class="hero-stat">
                 <div class="stat-num">11</div>
@@ -678,25 +678,25 @@
             </div>
             <div class="hero-stat">
                 <div class="stat-num">10</div>
-                <div class="stat-label">Risk Alerts</div>
+                <div class="stat-label">Key Guidance</div>
             </div>
         </div>
     </div>
 
     <h2>Why this guide?</h2>
     <p class="section-description">
-        Windows 365 Link is a purpose-built Cloud PC device that requires specific environment configurations across <strong>Microsoft Entra&nbsp;ID</strong>, <strong>Microsoft Intune</strong>, and <strong>Windows 365</strong>. When any of these prerequisites are not met, the device either fails to enroll or fails to connect to the user's Cloud PC — generating a support case.
+        Windows 365 Link is a purpose-built Cloud PC device that relies on configurations across <strong>Microsoft Entra&nbsp;ID</strong>, <strong>Microsoft Intune</strong>, and <strong>Windows 365</strong>. Confirming these settings ahead of time helps ensure a smooth onboarding experience for your users.
     </p>
 
-    <div class="callout support-risk">
-        <div class="callout-title">&#x1F4CA; Top Support Case Drivers</div>
-        Based on documentation analysis, these are the areas most likely to generate support cases for new deployments:
+    <div class="callout info">
+        <div class="callout-title">&#x1F4CA; Key Areas to Verify</div>
+        We recommend paying particular attention to these areas when preparing for deployment:
         <ol style="margin-top:8px; padding-left:20px;">
-            <li><strong>SSO not enabled on Cloud PCs</strong> — Device connects but Cloud PC rejects with non-obvious error</li>
-            <li><strong>SSO consent prompt not suppressed</strong> — Connection fails every 30 days; requires workaround on another device</li>
-            <li><strong>Conditional Access policy mismatch</strong> — Two-stage auth model causes "interactive window can't be shown" error</li>
-            <li><strong>Enrollment restrictions blocking Link devices</strong> — Link initially enrolls as "Unknown/Personal", hitting block policies</li>
-            <li><strong>MDM User Scope not configured</strong> — Device joins Entra ID but silently never appears in Intune</li>
+            <li><strong>SSO enabled on Cloud PCs</strong> — Windows 365 Link connects using Entra ID SSO, so provisioning policies need this enabled</li>
+            <li><strong>SSO consent prompt suppressed</strong> — Suppressing the consent prompt ensures a seamless connection experience</li>
+            <li><strong>Conditional Access alignment</strong> — The two-stage authentication model may need Conditional Access policies reviewed</li>
+            <li><strong>Enrollment restrictions reviewed</strong> — Link devices initially register as "Unknown/Personal", so existing restrictions should be checked</li>
+            <li><strong>MDM User Scope configured</strong> — Enables automatic Intune enrollment after Entra ID join</li>
         </ol>
     </div>
 
@@ -735,12 +735,12 @@
 <section class="doc-section" id="section-licensing">
     <h1>Step 1: Licensing</h1>
     <p class="section-description">
-        Windows 365 Link requires specific licenses for both the device management plane and the Cloud PC service. Missing any license results in silent failures during enrollment or connection.
+        Windows 365 Link requires specific licenses for both the device management plane and the Cloud PC service. Verifying these are in place helps ensure enrollment and connectivity work as expected.
     </p>
 
-    <div class="callout support-risk">
-        <div class="callout-title">&#x1F6A8; Support Case Risk</div>
-        <strong>Missing Entra ID Premium license:</strong> Without this license, automatic MDM enrollment silently fails. The device joins Entra ID but never appears in Intune. Admins often don't discover this until they try to find the device in Intune — sometimes days after deployment.
+    <div class="callout info">
+        <div class="callout-title">&#x1F4A1; Good to know</div>
+        <strong>Entra ID Premium license:</strong> This license enables automatic MDM enrollment. Without it, a device may join Entra ID but not appear in Intune. Confirming this license is in place beforehand avoids a common configuration gap.
     </div>
 
     <h2>Required licenses</h2>
@@ -804,8 +804,8 @@
     </p>
 
     <div class="callout warning">
-        <div class="callout-title">&#9888;&#65039; Common pitfall</div>
-        If <strong>"Users may join devices to Microsoft Entra"</strong> is set to <strong>"Selected"</strong>, make sure your target users are in the selected group. If it's set to <strong>"None"</strong>, no Windows 365 Link devices can be joined. This manifests as an error during OOBE with no clear remediation path for the user.
+        <div class="callout-title">&#9888;&#65039; Worth checking</div>
+        If <strong>"Users may join devices to Microsoft Entra"</strong> is set to <strong>"Selected"</strong>, make sure your target users are in the selected group. If it's set to <strong>"None"</strong>, Link devices won't be able to join. Confirming this setting avoids an unexpected error during OOBE.
     </div>
 
     <h2>Configuration checklist</h2>
@@ -833,9 +833,9 @@
         </li>
     </ul>
 
-    <div class="callout support-risk">
-        <div class="callout-title">&#x1F6A8; Support Case Risk</div>
-        <strong>Device join limit reached:</strong> The default is 50 devices per user. If a Device Enrollment Manager (DEM) is onboarding many Link devices under one account, they'll hit this limit silently. The OOBE will fail with a generic error, and neither the admin nor the user will know why.
+    <div class="callout info">
+        <div class="callout-title">&#x1F4A1; Good to know</div>
+        <strong>Device join limit:</strong> The default is 50 devices per user. If a Device Enrollment Manager (DEM) account is onboarding many Link devices, it's worth confirming this limit has room. You can increase it in Entra ID device settings if needed.
     </div>
 
     <div class="step-card">
@@ -860,12 +860,12 @@
 <section class="doc-section" id="section-intune-enrollment">
     <h1>Step 3: Intune Automatic Enrollment</h1>
     <p class="section-description">
-        After a Windows 365 Link device joins Entra ID, it must automatically enroll in Intune via the <strong>MDM User Scope</strong> setting. Without this, devices join Entra but <em>silently never appear in Intune</em> — one of the most confusing failure modes.
+        After a Windows 365 Link device joins Entra ID, it needs to automatically enroll in Intune via the <strong>MDM User Scope</strong> setting. This is an important step to confirm — if MDM auto-enrollment isn't enabled, the device will join Entra ID but won't appear in Intune.
     </p>
 
-    <div class="callout error">
-        <div class="callout-title">&#x1F6D1; Critical — silent failure</div>
-        If <strong>MDM user scope</strong> is set to <strong>"None"</strong>, or the user isn't in scope, the device completes OOBE successfully but is <strong>never managed</strong>. The device appears in Entra ID but <em>not</em> in Intune. There is no error shown to the user or admin during enrollment. This is the second most common support issue for new deployments.
+    <div class="callout warning">
+        <div class="callout-title">&#x1F4A1; Important configuration</div>
+        If <strong>MDM user scope</strong> is set to <strong>"None"</strong>, or the user isn't in scope, the device will complete OOBE and appear in Entra ID but <strong>won't be enrolled in Intune</strong>. Setting this to <strong>"All"</strong> or including your target users in a <strong>"Some"</strong> scope ensures devices are managed from day one.
     </div>
 
     <h2>Configuration checklist</h2>
@@ -922,12 +922,12 @@
 <section class="doc-section" id="section-enrollment-restrictions">
     <h1>Step 4: Enrollment Restrictions</h1>
     <p class="section-description">
-        Windows 365 Link devices initially appear as <strong>"Unknown"</strong> ownership during enrollment. Any Intune platform restriction that blocks personally owned or unknown Windows devices will also block Link devices from enrolling. This is a very common and confusing deployment blocker.
+        Windows 365 Link devices initially appear as <strong>"Unknown"</strong> ownership during enrollment. If your environment has Intune platform restrictions that block personally owned or unknown Windows devices, these may also apply to Link devices. It's worth reviewing your restrictions before deployment.
     </p>
 
-    <div class="callout error">
-        <div class="callout-title">&#x1F6D1; Critical — enrollment silently blocked</div>
-        Many organizations have an existing restriction blocking personal Windows devices. Because Link devices are <strong>"Unknown" at enrollment time</strong> (before they become "Corporate-owned" after join), they are caught by this restriction. The OOBE fails with a generic enrollment error.
+    <div class="callout warning">
+        <div class="callout-title">&#x1F4A1; Important to verify</div>
+        Many organizations have restrictions blocking personal Windows devices. Because Link devices are <strong>"Unknown" at enrollment time</strong> (before they become "Corporate-owned" after join), they can be affected by these restrictions. Reviewing and adjusting your restriction policies ensures Link devices enroll smoothly.
     </div>
 
     <h2>Do you have restrictions blocking personal Windows devices?</h2>
@@ -1004,17 +1004,17 @@
 <section class="doc-section" id="section-sso">
     <h1>Step 5: Single Sign-On (SSO) Configuration</h1>
     <p class="section-description">
-        Windows 365 Link <strong>can only connect to Cloud PCs that have Entra ID SSO enabled</strong>. This is <em>not</em> optional. Additionally, the SSO consent prompt must be suppressed or users will face connection failures. These two requirements together are the <strong>#1 source of support cases</strong>.
+        Windows 365 Link <strong>connects to Cloud PCs using Entra ID SSO</strong>, so this must be enabled on provisioning policies. Additionally, suppressing the SSO consent prompt provides the best user experience. These two settings are key to a seamless connection.
     </p>
 
-    <div class="callout error">
-        <div class="callout-title">&#x1F6D1; Critical — connection will fail without SSO</div>
-        If SSO is not enabled on the Cloud PC's provisioning policy, the user sees: <em>"Your Cloud PC does not support Entra ID single sign-on."</em> The fix requires editing the provisioning policy and re-provisioning or applying the change.
+    <div class="callout warning">
+        <div class="callout-title">&#x1F4A1; Important — SSO is required for Link</div>
+        If SSO is not enabled on the Cloud PC's provisioning policy, the connection won't succeed. The fix is straightforward — enable SSO in the provisioning policy settings and the change takes effect on the next connection.
     </div>
 
-    <div class="callout warning">
-        <div class="callout-title">&#9888;&#65039; SSO Consent Prompt — recurring failure</div>
-        Even with SSO enabled, users are prompted for consent the first time and <strong>every 30 days</strong>. Link uses a non-interactive SSO connection that <em>cannot show this prompt</em>. The user sees: <em>"Failed to open a Microsoft Entra ID credential prompt"</em>. The only workaround is to connect from a different device first. <strong>Suppressing the consent prompt is essential.</strong>
+    <div class="callout info">
+        <div class="callout-title">&#9888;&#65039; SSO Consent Prompt</div>
+        Even with SSO enabled, users may be prompted for consent the first time and periodically thereafter. Link uses a non-interactive SSO connection that cannot display this prompt. <strong>Suppressing the consent prompt</strong> ensures users connect seamlessly every time. See the checklist below for how to configure this.
     </div>
 
     <h2>Configuration checklist</h2>
@@ -1087,10 +1087,10 @@
 <section class="doc-section" id="section-conditional-access">
     <h1>Step 6: Conditional Access Policies</h1>
     <p class="section-description">
-        Windows 365 Link authentication happens in <strong>two stages</strong>, and each stage triggers different Conditional Access policies. Misalignment between these stages is the <strong>#3 cause of support cases</strong> and produces the confusing error: <em>"An interactive window could not be shown."</em>
+        Windows 365 Link authentication happens in <strong>two stages</strong>, and each stage triggers different Conditional Access policies. It's important to ensure these stages are aligned so users have a seamless connection experience.
     </p>
 
-    <div class="callout support-risk">
+    <div class="callout info">
         <div class="callout-title">&#x1F4CA; Understanding the two-stage authentication</div>
         <table style="margin-top:8px">
             <thead>
@@ -1101,7 +1101,7 @@
                 <tr><td><strong>2. Connect to Cloud PC</strong></td><td>Non-interactive SSO</td><td>Resources: Windows 365, Azure Virtual Desktop, Windows Cloud Login</td><td>&#10008; No</td></tr>
             </tbody>
         </table>
-        <p style="margin-top:8px">If Stage 2 requires MFA but Stage 1 didn't satisfy it (because there's no matching user-action policy), the connection is blocked.</p>
+        <p style="margin-top:8px">If Stage 2 requires MFA but Stage 1 didn't satisfy it (because there's no matching user-action policy), the connection may not complete as expected. Aligning both stages ensures a smooth experience.</p>
     </div>
 
     <h2>Configuration checklist</h2>
@@ -1182,8 +1182,8 @@
     </div>
 
     <div class="callout warning">
-        <div class="callout-title">&#9888;&#65039; Third-party IdP custom controls — enrollment breaks</div>
-        If your third-party identity provider uses <strong>custom controls</strong> to integrate with Entra ID, these do <strong>not</strong> support Intune device enrollment or Entra ID join. Use Entra's <strong>external authentication method</strong> instead of custom controls.
+        <div class="callout-title">&#9888;&#65039; Third-party IdP custom controls — enrollment compatibility</div>
+        If your third-party identity provider uses <strong>custom controls</strong> to integrate with Entra ID, be aware these do <strong>not</strong> support Intune device enrollment or Entra ID join. Use Entra's <strong>external authentication method</strong> instead of custom controls.
     </div>
 
     <h2>Configuration checklist</h2>
@@ -1247,9 +1247,9 @@
         Windows 365 Link uses the <strong>VDI 2.0 solution for Teams</strong> for media optimizations (audio/video). The VDI component is preinstalled on the device, but the Teams admin must ensure users are in scope for the new VDI policy.
     </p>
 
-    <div class="callout support-risk">
-        <div class="callout-title">&#x1F6A8; Support Case Risk</div>
-        <strong>Teams media quality / performance issues:</strong> If the Teams VDI 2.0 policy doesn't include Link users, media optimizations won't activate. Audio and video calls will work but will route through the Cloud PC without local optimization — resulting in poor quality that generates support cases.
+    <div class="callout info">
+        <div class="callout-title">&#x1F4A1; Good to know</div>
+        <strong>Teams media optimizations:</strong> If the Teams VDI 2.0 policy doesn't include Link users, media optimizations won't be active. Audio and video calls will still work, but routing through the Cloud PC without local optimization may affect call quality. Including Link users in the VDI 2.0 policy ensures the best experience.
     </div>
 
     <h2>Configuration checklist</h2>
@@ -1295,7 +1295,7 @@
 <section class="doc-section" id="section-network">
     <h1>Step 9: Network Requirements</h1>
     <p class="section-description">
-        Windows 365 Link has the same network requirements as Azure Virtual Desktop end user devices. Firewall and proxy configurations must allow these connections or the device will fail to connect.
+        Windows 365 Link has the same network requirements as Azure Virtual Desktop end user devices. Confirming that your firewall and proxy configurations allow the necessary connections helps ensure devices can connect without issues.
     </p>
 
     <div class="callout info">
@@ -1440,7 +1440,7 @@
 <section class="doc-section" id="section-validation">
     <h1>Step 11: End-to-End Validation</h1>
     <p class="section-description">
-        Before bulk deployment, perform an end-to-end validation with at least one Link device. This final section ensures all the pieces work together and helps you identify issues before they become support cases at scale.
+        Before bulk deployment, we recommend performing an end-to-end validation with at least one Link device. This confirms all the pieces are working together and gives you confidence before scaling out.
     </p>
 
     <h2>Validation checklist</h2>
