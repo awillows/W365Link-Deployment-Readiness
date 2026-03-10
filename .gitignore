@@ -1,2 +1,5 @@
 # HTML report output (contains tenant/login details)
 W365Link-ReadinessReport.html
+
+# VS Code workspace file
+*.code-workspace
