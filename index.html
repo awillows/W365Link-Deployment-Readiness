@@ -1043,8 +1043,8 @@
         <li>
             <input type="checkbox" id="sso-4">
             <div class="check-content">
-                <div class="check-label">Enabled Entra authentication for RDP on SSO service principals</div>
-                <div class="check-detail">Configure the "Windows Cloud Login" and "Azure Virtual Desktop" service principals.</div>
+                <div class="check-label">Enabled Entra authentication for RDP on the SSO service principal</div>
+                <div class="check-detail">Configure the "Windows Cloud Login" service principal.</div>
             </div>
         </li>
         <li>
@@ -1101,7 +1101,7 @@
                 <tr><td><strong>2. Connect to Cloud PC</strong></td><td>Non-interactive SSO</td><td>Resources: Windows 365, Azure Virtual Desktop, Windows Cloud Login</td><td>&#10008; No</td></tr>
             </tbody>
         </table>
-        <p style="margin-top:8px">If Stage 2 requires MFA but Stage 1 didn't satisfy it (because there's no matching user-action policy), the connection may not complete as expected. Aligning both stages ensures a smooth experience.</p>
+        <p style="margin-top:8px">If Stage 2 requires MFA but Stage 1 didn't satisfy it (because there's no matching user-action policy), devices on builds before 26100.7462 may not connect. Since build 26100.7462, the device can prompt for additional authentication — but Microsoft still highly recommends creating a user-action policy as a best practice.</p>
     </div>
 
     <h2>Configuration checklist</h2>
@@ -1116,8 +1116,8 @@
         <li>
             <input type="checkbox" id="ca-2">
             <div class="check-content">
-                <div class="check-label">Created a CA policy for user action "Register or join devices" with matching controls</div>
-                <div class="check-detail">The Grant controls on this policy must match (or be stronger than) the Resource policies found with What If. Exclude emergency/break-glass accounts.</div>
+                <div class="check-label">Created a CA policy for user action "Register or join devices" with matching controls <span class="tag tag-recommended">Recommended</span></div>
+                <div class="check-detail">Since build 26100.7462, this is no longer mandatory — but Microsoft still highly recommends it. The Grant controls on this policy should match (or be stronger than) the Resource policies found with What If. Exclude emergency/break-glass accounts.</div>
             </div>
         </li>
         <li>

@@ -112,9 +112,13 @@ $IntuneSkuParts = @(
     "INTUNE_A",
     "Intune_EDU",
     "INTUNE_SMB",
+    "Microsoft_Intune_Suite",  # Intune Suite add-on
     "SPE_E3",    # M365 E3 includes Intune
     "SPE_E5",    # M365 E5 includes Intune
+    "Microsoft_365_E5",  # M365 E5 (no Teams) variant
+    "Microsoft_365_E3",  # M365 E3 (no Teams) variant
     "SPB",       # M365 Business Premium
+    "Microsoft_365_Business_Premium",
     "EMSPREMIUM" # EMS E5
 )
 $EntraPremiumSkuParts = @(
@@ -122,7 +126,10 @@ $EntraPremiumSkuParts = @(
     "EMSPREMIUM",
     "SPE_E3",
     "SPE_E5",
+    "Microsoft_365_E5",  # M365 E5 (no Teams) variant
+    "Microsoft_365_E3",  # M365 E3 (no Teams) variant
     "SPB",
+    "Microsoft_365_Business_Premium",
     "EMS"
 )
 
@@ -752,8 +759,7 @@ function Test-CloudPCSSO {
     Write-Host "    Checking SSO consent suppression..." -ForegroundColor Gray
     
     $ssoSPs = @(
-        @{ Name = "Windows Cloud Login"; AppId = $WCLAppId },
-        @{ Name = "Azure Virtual Desktop"; AppId = $AVDAppId }
+        @{ Name = "Windows Cloud Login"; AppId = $WCLAppId }
     )
 
     foreach ($ssoSP in $ssoSPs) {
@@ -891,11 +897,11 @@ function Test-ConditionalAccess {
         if ($mfaRequired -and $userActionPolicies.Count -eq 0) {
             $mfaPolicyNames = ($mfaRequired | ForEach-Object { $_.displayName }) -join ", "
             Add-CheckResult -Category $category -CheckName "Missing user-action CA policy" `
-                -Status "Fail" `
-                -Detail "MFA/auth controls found on resource policies ($mfaPolicyNames) but NO matching 'Register or join devices' user-action policy exists. On devices before build 26100.7462, this will cause: 'An interactive window could not be shown.' Even on newer builds, this is a best practice." `
-                -Remediation "Create a CA policy targeting user action 'Register or join devices' with the same Grant controls. Use Report-only mode first." `
+                -Status "Warning" `
+                -Detail "MFA/auth controls found on resource policies ($mfaPolicyNames) but no matching 'Register or join devices' user-action policy exists. Since build 26100.7462, this is no longer mandatory — but Microsoft still highly recommends creating this policy as a best practice." `
+                -Remediation "Create a CA policy targeting user action 'Register or join devices' with the same Grant controls. Use Report-only mode first. On devices before build 26100.7462, this is required to avoid connection errors." `
                 -LearnMoreUrl "https://learn.microsoft.com/en-us/windows-365/link/conditional-access-policies" `
-                -RiskLevel "Critical"
+                -RiskLevel "Medium"
         }
         elseif ($mfaRequired -and $userActionPolicies.Count -gt 0) {
             Add-CheckResult -Category $category -CheckName "User-action CA policy" `
