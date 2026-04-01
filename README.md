@@ -114,7 +114,7 @@ The report is a self-contained HTML file that can be shared with stakeholders, s
 
 ## Interactive Deployment Guide
 
-The repository also includes an [interactive deployment guide](index.html) (`index.html`) — a standalone web page that walks through the Windows 365 Link deployment process step-by-step with expandable sections and visual guidance.
+The repository also includes an [interactive deployment guide](https://awillows.github.io/W365Link-Deployment-Readiness/) — a standalone web page that walks through the Windows 365 Link deployment process step-by-step with expandable sections and visual guidance.
 
 ## Contributing
 
