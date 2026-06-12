@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Windows 365 Link - Deployment Readiness Guide</title>
+    <meta name="description" content="Interactive deployment readiness guide for Windows 365 Link — 12 steps covering licensing, Entra join, Intune enrollment, SSO, Conditional Access, and more.">
+    <meta property="og:title" content="Windows 365 Link - Deployment Readiness Guide">
+    <meta property="og:description" content="Interactive 12-step checklist to prepare your environment for Windows 365 Link deployment.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🔗</text></svg>">
     <style>
         :root {
             --brand-primary: #0078d4;
@@ -643,18 +648,21 @@
         <a href="#" data-section="teams">
             <span class="step-status" id="status-teams">&#8288;</span> 8. Teams &amp; Media
         </a>
+        <a href="#" data-section="timezone">
+            <span class="step-status" id="status-timezone">&#8288;</span> 9. Time Zone
+        </a>
         <a href="#" data-section="network">
-            <span class="step-status" id="status-network">&#8288;</span> 9. Network
+            <span class="step-status" id="status-network">&#8288;</span> 10. Network
         </a>
     </div>
 
     <div class="sidebar-section-label">Deploy</div>
     <div class="sidebar-nav">
         <a href="#" data-section="onboarding">
-            <span class="step-status" id="status-onboarding">&#8288;</span> 10. Onboarding
+            <span class="step-status" id="status-onboarding">&#8288;</span> 11. Onboarding
         </a>
         <a href="#" data-section="validation">
-            <span class="step-status" id="status-validation">&#8288;</span> 11. Validation
+            <span class="step-status" id="status-validation">&#8288;</span> 12. Validation
         </a>
     </div>
 </nav>
@@ -669,7 +677,7 @@
         <p>This interactive guide walks administrators through every prerequisite and configuration step needed to successfully deploy Windows 365 Link devices. Each section includes validation checklists and highlights areas worth confirming before you begin.</p>
         <div class="hero-stats">
             <div class="hero-stat">
-                <div class="stat-num">11</div>
+                <div class="stat-num">12</div>
                 <div class="stat-label">Sections</div>
             </div>
             <div class="hero-stat">
@@ -719,9 +727,10 @@
             <tr><td>6</td><td>Conditional Access</td><td>Entra Admin Center</td><td><span class="tag tag-required">Required</span></td></tr>
             <tr><td>7</td><td>FIDO2 / Auth Methods</td><td>Entra Admin Center</td><td><span class="tag tag-recommended">Recommended</span></td></tr>
             <tr><td>8</td><td>Teams VDI 2.0</td><td>Teams Admin / PowerShell</td><td><span class="tag tag-recommended">Recommended</span></td></tr>
-            <tr><td>9</td><td>Network / Firewall</td><td>Network infrastructure</td><td><span class="tag tag-required">Required</span></td></tr>
-            <tr><td>10</td><td>Onboarding Strategy</td><td>—</td><td><span class="tag tag-required">Required</span></td></tr>
-            <tr><td>11</td><td>End-to-End Validation</td><td>—</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>9</td><td>Time Zone</td><td>Intune Admin Center</td><td><span class="tag tag-recommended">Recommended</span></td></tr>
+            <tr><td>10</td><td>Network / Firewall</td><td>Network infrastructure</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>11</td><td>Onboarding Strategy</td><td>—</td><td><span class="tag tag-required">Required</span></td></tr>
+            <tr><td>12</td><td>End-to-End Validation</td><td>—</td><td><span class="tag tag-required">Required</span></td></tr>
         </tbody>
     </table>
 
@@ -1287,13 +1296,82 @@
 
     <div class="nav-buttons">
         <button class="btn btn-outline" onclick="navigateTo('authentication')">&larr; Authentication</button>
+        <button class="btn btn-primary" onclick="navigateTo('timezone')">Next: Time Zone &rarr;</button>
+    </div>
+</section>
+
+<!-- ==================== TIME ZONE ==================== -->
+<section class="doc-section" id="section-timezone">
+    <h1>Step 9: Time Zone Configuration <span class="tag tag-recommended">Recommended</span></h1>
+    <p class="section-description">
+        By default, Windows 365 Link devices may not automatically detect the local time zone, which can cause the system clock to display the wrong time. Deploying a Settings Catalog policy to enable location access resolves this and ensures the device always shows the correct local time.
+    </p>
+
+    <div class="callout warning">
+        <div class="callout-title">&#9888;&#65039; Common issue</div>
+        Customers frequently report that Link devices display the wrong time zone after onboarding. This happens because the device needs location services enabled to detect the time zone. Without this policy, users see incorrect times on the sign-in screen and within their Cloud PC session.
+    </div>
+
+    <h2>Configuration checklist</h2>
+    <ul class="checklist" data-section="timezone">
+        <li>
+            <input type="checkbox" id="tz-1">
+            <div class="check-content">
+                <div class="check-label">Created a Settings Catalog policy to enable location access</div>
+                <div class="check-detail">Intune admin center &rarr; Devices &rarr; Configuration &rarr; Create &rarr; New Policy &rarr; Platform: Windows 10 and later &rarr; Profile Type: Settings catalog.</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="tz-2">
+            <div class="check-content">
+                <div class="check-label">Added "Let Apps Access Location" setting and set to "Force allow"</div>
+                <div class="check-detail">In the Settings picker, search for "Access location" &rarr; select the Privacy category &rarr; select "Let Apps Access Location" &rarr; set value to "Force allow".</div>
+            </div>
+        </li>
+        <li>
+            <input type="checkbox" id="tz-3">
+            <div class="check-content">
+                <div class="check-label">Assigned the policy to Windows 365 Link devices</div>
+                <div class="check-detail">On the Assignments page, target Link devices using "Add all devices" with an Include filter for your Windows 365 Link device filter (operatingSystemSKU = WCPC).</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="step-card">
+        <h3><span class="step-num">&#10003;</span> Step-by-step</h3>
+        <div class="portal-path">Intune admin center &rarr; Devices &rarr; Configuration (under Manage devices) &rarr; Create &rarr; New Policy</div>
+        <ol style="margin: 12px 0; padding-left: 20px; font-size: 13px; line-height: 2;">
+            <li>Platform: <strong>Windows 10 and later</strong> | Profile Type: <strong>Settings catalog</strong></li>
+            <li>Name the policy (e.g., "Windows 365 Link Time Zone Detection")</li>
+            <li>Select <strong>Add settings</strong> &rarr; search "Access location" &rarr; select <strong>Privacy</strong> category</li>
+            <li>Select <strong>Let Apps Access Location</strong> and close the Settings picker</li>
+            <li>Set value to <strong>Force allow</strong> &rarr; select Next</li>
+            <li>On the Scope tags page, select any desired scope tags to apply &rarr; select Next</li>
+            <li>On Assignments, target all devices with an Include filter for Windows 365 Link</li>
+            <li>Review + Create</li>
+        </ol>
+    </div>
+
+    <div class="callout info">
+        <div class="callout-title">&#x1F4A1; Good to know</div>
+        This policy enables the Windows location service on the Link device, which is required for automatic time zone detection. It does not share precise location data with any apps — it only allows the OS to determine the local time zone.
+    </div>
+
+    <h2>Further reading</h2>
+    <ul style="font-size:13px; line-height:2;">
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/auto-detect-time-zone" target="_blank">Set Windows 365 Link devices to auto detect current time zone</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows-365/link/device-management-overview" target="_blank">Device management overview for Windows 365 Link</a></li>
+    </ul>
+
+    <div class="nav-buttons">
+        <button class="btn btn-outline" onclick="navigateTo('teams')">&larr; Teams &amp; Media</button>
         <button class="btn btn-primary" onclick="navigateTo('network')">Next: Network &rarr;</button>
     </div>
 </section>
 
 <!-- ==================== NETWORK ==================== -->
 <section class="doc-section" id="section-network">
-    <h1>Step 9: Network Requirements</h1>
+    <h1>Step 10: Network Requirements</h1>
     <p class="section-description">
         Windows 365 Link has the same network requirements as Azure Virtual Desktop end user devices. Confirming that your firewall and proxy configurations allow the necessary connections helps ensure devices can connect without issues.
     </p>
@@ -1342,14 +1420,14 @@
     </ul>
 
     <div class="nav-buttons">
-        <button class="btn btn-outline" onclick="navigateTo('teams')">&larr; Teams &amp; Media</button>
+        <button class="btn btn-outline" onclick="navigateTo('timezone')">&larr; Time Zone</button>
         <button class="btn btn-primary" onclick="navigateTo('onboarding')">Next: Onboarding &rarr;</button>
     </div>
 </section>
 
 <!-- ==================== ONBOARDING ==================== -->
 <section class="doc-section" id="section-onboarding">
-    <h1>Step 10: Onboarding Strategy</h1>
+    <h1>Step 11: Onboarding Strategy</h1>
     <p class="section-description">
         Windows 365 Link supports two onboarding approaches: <strong>Admin-driven</strong> (using a Device Enrollment Manager) and <strong>User-driven</strong> (user completes OOBE themselves). Choose the right model based on your deployment scenario.
     </p>
@@ -1418,7 +1496,7 @@
             <input type="checkbox" id="ob-4">
             <div class="check-content">
                 <div class="check-label">Recommended post-onboard configs applied (time zone, screen timeout)</div>
-                <div class="check-detail">Auto Detect Local Time Zone is strongly recommended. Screen timeout can be customized to your needs.</div>
+                <div class="check-detail">Auto Detect Local Time Zone is strongly recommended — see <a href="#" onclick="navigateTo('timezone'); return false;">Step 9</a>. Screen timeout can be customized to your needs.</div>
             </div>
         </li>
     </ul>
@@ -1438,7 +1516,7 @@
 
 <!-- ==================== VALIDATION ==================== -->
 <section class="doc-section" id="section-validation">
-    <h1>Step 11: End-to-End Validation</h1>
+    <h1>Step 12: End-to-End Validation</h1>
     <p class="section-description">
         Before bulk deployment, we recommend performing an end-to-end validation with at least one Link device. This confirms all the pieces are working together and gives you confidence before scaling out.
     </p>
@@ -1574,7 +1652,7 @@
     // ========== STATE ==========
     const sections = [
         'overview','licensing','entra-join','intune-enrollment','enrollment-restrictions',
-        'sso','conditional-access','authentication','teams','network','onboarding','validation'
+        'sso','conditional-access','authentication','teams','timezone','network','onboarding','validation'
     ];
 
     // ========== NAVIGATION ==========
